@@ -1,7 +1,7 @@
 # STEP 1 — Problem Research & Validation
 ## AI for On-Screen Marking (OSM) and Digital Evaluation — Indian University Context
 
-**Input:** `osm-problem-deconstruction.md` (Step 0 output)
+**Input:** `docs/ideation/osm-step0-problem-deconstruction.md` (Step 0 output)
 **Stage purpose:** Evidence-based research only. No solution selection, no tech stack, no PRD.
 **Research date:** September 2026 (web research current to this date)
 

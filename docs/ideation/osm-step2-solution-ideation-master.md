@@ -2,8 +2,8 @@
 ## AI + Analytics for On-Screen Marking (OSM) and Digital Evaluation
 
 **Input documents**
-- `osm-step0-problem-deconstruction.md`
-- `osm-step1-research-validation.md`
+- `docs/ideation/osm-step0-problem-deconstruction.md`
+- `docs/research/osm-step1-research-validation.md`
 - Official Hackathon Problem Statement
 
 **Stage purpose:** Reassess the solution space using the validated problem, research evidence, hackathon requirements, feasibility constraints, and expected impact. Generate and compare complete product directions before selecting one. Do **not** jump directly into a PRD, architecture, technology stack, or implementation plan.
