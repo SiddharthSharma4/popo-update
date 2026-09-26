@@ -395,23 +395,23 @@ The following table is the authoritative high-level task registry.
 
 | ID                      | Phase | Category       | Priority | Status  | Depends On              | Objective                                                  |
 | ----------------------- | ----- | -------------- | -------- | ------- | ----------------------- | ---------------------------------------------------------- |
-| TASK-P0-FOUND-001       | P0    | FOUNDATION     | CRITICAL | BACKLOG | —                       | Establish repository and development foundation            |
-| TASK-P0-FOUND-002       | P0    | DOCUMENTATION  | CRITICAL | BACKLOG | TASK-P0-FOUND-001       | Establish project documentation and traceability structure |
+| TASK-P0-FOUND-001       | P0    | FOUNDATION     | CRITICAL | DONE    | —                       | Establish repository and development foundation            |
+| TASK-P0-FOUND-002       | P0    | DOCUMENTATION  | CRITICAL | DONE    | TASK-P0-FOUND-001       | Establish project documentation and traceability structure |
 | TASK-P0-FOUND-003       | P0    | TESTING        | HIGH     | BACKLOG | TASK-P0-FOUND-001       | Establish baseline testing and verification infrastructure |
 | TASK-P0-FOUND-004       | P0    | INFRASTRUCTURE | HIGH     | BACKLOG | TASK-P0-FOUND-001       | Establish local development and environment configuration  |
 | TASK-P0-FOUND-005       | P0    | DEMO           | HIGH     | BACKLOG | TASK-P0-FOUND-002       | Establish deterministic demo/reset foundation              |
-| TASK-P1-DOMAIN-001      | P1    | DOMAIN         | CRITICAL | BACKLOG | P0 complete             | Establish core domain model                                |
-| TASK-P1-DOMAIN-002      | P1    | DATABASE       | CRITICAL | BACKLOG | TASK-P1-DOMAIN-001      | Establish authoritative persistence model                  |
-| TASK-P1-DOMAIN-003      | P1    | API            | HIGH     | BACKLOG | TASK-P1-DOMAIN-001      | Establish application/service boundaries                   |
-| TASK-P2-EVAL-001        | P2    | EVALUATION     | CRITICAL | BACKLOG | P1 complete             | Implement evaluation workflow                              |
-| TASK-P2-EVAL-002        | P2    | API            | HIGH     | BACKLOG | TASK-P2-EVAL-001        | Expose evaluation operations                               |
+| TASK-P1-DOMAIN-001      | P1    | DOMAIN         | CRITICAL | DONE    | P0 complete             | Establish core domain model                                |
+| TASK-P1-DOMAIN-002      | P1    | DATABASE       | CRITICAL | DONE    | TASK-P1-DOMAIN-001      | Establish authoritative persistence model                  |
+| TASK-P1-DOMAIN-003      | P1    | API            | HIGH     | DONE    | TASK-P1-DOMAIN-001      | Establish application/service boundaries                   |
+| TASK-P2-EVAL-001        | P2    | EVALUATION     | CRITICAL | DONE    | P1 complete             | Implement evaluation workflow                              |
+| TASK-P2-EVAL-002        | P2    | API            | HIGH     | DONE    | TASK-P2-EVAL-001        | Expose evaluation operations                               |
 | TASK-P2-EVAL-003        | P2    | TESTING        | HIGH     | BACKLOG | TASK-P2-EVAL-001        | Verify evaluation lifecycle                                |
-| TASK-P3-VAL-001         | P3    | VALIDATION     | CRITICAL | BACKLOG | P2 complete             | Implement deterministic completeness validation            |
-| TASK-P3-VAL-002         | P3    | VALIDATION     | CRITICAL | BACKLOG | TASK-P3-VAL-001         | Generate first QualitySignal                               |
-| TASK-P3-VAL-003         | P3    | TESTING        | HIGH     | BACKLOG | TASK-P3-VAL-002         | Verify deterministic signal generation                     |
-| TASK-P4-INTEL-001       | P4    | INTELLIGENCE   | CRITICAL | BACKLOG | P3 complete             | Implement first statistical quality detector               |
-| TASK-P4-INTEL-002       | P4    | INTELLIGENCE   | HIGH     | BACKLOG | TASK-P4-INTEL-001       | Establish detector framework                               |
-| TASK-P4-INTEL-003       | P4    | TESTING        | HIGH     | BACKLOG | TASK-P4-INTEL-002       | Verify detector behavior                                   |
+| TASK-P3-VAL-001         | P3    | VALIDATION     | CRITICAL | DONE    | P2 complete             | Implement deterministic completeness validation            |
+| TASK-P3-VAL-002         | P3    | VALIDATION     | CRITICAL | DONE    | TASK-P3-VAL-001         | Generate first QualitySignal                               |
+| TASK-P3-VAL-003         | P3    | TESTING        | HIGH     | DONE    | TASK-P3-VAL-002         | Verify deterministic signal generation                     |
+| TASK-P4-INTEL-001       | P4    | INTELLIGENCE   | CRITICAL | DONE    | P3 complete             | Implement first statistical quality detector               |
+| TASK-P4-INTEL-002       | P4    | INTELLIGENCE   | HIGH     | DONE    | TASK-P4-INTEL-001       | Establish detector framework                               |
+| TASK-P4-INTEL-003       | P4    | TESTING        | HIGH     | DONE    | TASK-P4-INTEL-002       | Verify detector behavior                                   |
 | TASK-P5-MOD-001         | P5    | MODERATION     | CRITICAL | BACKLOG | P3 complete             | Implement TriageCase workflow                              |
 | TASK-P5-MOD-002         | P5    | MODERATION     | CRITICAL | BACKLOG | TASK-P5-MOD-001         | Implement human Resolution workflow                        |
 | TASK-P5-MOD-003         | P5    | UI             | HIGH     | BACKLOG | TASK-P5-MOD-002         | Implement moderator review experience                      |
@@ -1166,19 +1166,19 @@ This section records the current execution pointer.
 
 ```text
 Current Phase:
-P0 — Foundation
+P4 — Quality Signal Pipeline / Intelligence (Phase 4 Tasks Complete)
 
 Current Task:
-NONE
+TASK-P4-INTEL-003 (Verify detector behavior)
 
 Current Task Status:
-NOT STARTED
+DONE (Verified: 153/153 passed tests across 11 suites, +13 new tests in detector-behavior.test.ts, typecheck: 0 errors, web build: PASS, git diff --check: PASS)
 
 Next Ready Task:
-TASK-P0-FOUND-001
+TASK-P5-MOD-001 (or TASK-P2-EVAL-003)
 
 Vertical Slice:
-NOT STARTED
+IN PROGRESS (Completeness validation, QualitySignal generation, EvaluatorMeanDeviationDetector, StatisticalDetectionEngine & behavioral verification complete)
 
 AI Layer:
 NOT STARTED

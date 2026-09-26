@@ -1,0 +1,58 @@
+/**
+ * Canonical domain and workflow enums for OSM.
+ * Conforms to docs/contracts/05-domain-contract.md and docs/contracts/06-api-contract.md.
+ */
+
+export enum EvaluationStatus {
+  DRAFT = "DRAFT",
+  IN_PROGRESS = "IN_PROGRESS",
+  SUBMITTED = "SUBMITTED",
+  FINALIZED = "FINALIZED",
+}
+
+export enum SignalSeverity {
+  INFO = "INFO",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
+}
+
+export enum QualitySignalStatus {
+  GENERATED = "GENERATED",
+  REVIEWABLE = "REVIEWABLE",
+  LINKED_TO_CASE = "LINKED_TO_CASE",
+  UNDER_INVESTIGATION = "UNDER_INVESTIGATION",
+  RESOLVED = "RESOLVED",
+  DISMISSED = "DISMISSED",
+}
+
+export enum TriageCaseStatus {
+  OPEN = "OPEN",
+  ASSIGNED = "ASSIGNED",
+  UNDER_REVIEW = "UNDER_REVIEW",
+  RESOLVED = "RESOLVED",
+  ESCALATED = "ESCALATED",
+}
+
+export enum ResolutionOutcome {
+  CONFIRMED_VALID = "CONFIRMED_VALID",
+  LEGITIMATE_VARIATION = "LEGITIMATE_VARIATION",
+  CORRECTION_REQUIRED = "CORRECTION_REQUIRED",
+  ESCALATED = "ESCALATED",
+  DISMISSED = "DISMISSED",
+}
+
+export enum ActorType {
+  USER = "USER",
+  SYSTEM = "SYSTEM",
+  DETECTOR = "DETECTOR",
+  AI = "AI",
+  INTEGRATION = "INTEGRATION",
+}
+
+export enum UserRole {
+  EXAMINER = "EXAMINER",
+  MODERATOR = "MODERATOR",
+  ADMIN = "ADMIN",
+}
