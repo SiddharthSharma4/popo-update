@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { TriageCaseResponse } from "@osm/shared";
 import { ApiError } from "../../services/api-client.ts";
+import { Modal, Button, Input, Alert } from "../ui";
 
 interface AssignCaseModalProps {
   triageCase: TriageCaseResponse;
@@ -27,7 +28,7 @@ export const AssignCaseModal: React.FC<AssignCaseModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assigneeId.trim()) {
-      setError("Assignee ID is required.");
+      setError("Please specify an authorized moderator identifier.");
       return;
     }
 
@@ -42,14 +43,14 @@ export const AssignCaseModal: React.FC<AssignCaseModalProps> = ({
       if (err instanceof ApiError) {
         if (err.statusCode === 409) {
           setIsConflict(true);
-          setError("Concurrency Conflict: This case was modified by another reviewer. Please reload.");
+          setError("Concurrency Conflict: This moderation case was modified by another reviewer. Please reload the latest case state.");
         } else if (err.statusCode === 403) {
-          setError(err.message || "Forbidden: Only authorized MODERATOR or ADMIN can assign cases.");
+          setError(err.message || "Forbidden: Only authorized Moderators or Administrators can assign cases.");
         } else {
-          setError(err.message || `API Error ${err.statusCode}`);
+          setError(err.message || `Server Error (${err.statusCode})`);
         }
       } else {
-        setError(err instanceof Error ? err.message : "Failed to assign triage case.");
+        setError(err instanceof Error ? err.message : "Failed to assign moderation case.");
       }
     } finally {
       setIsSubmitting(false);
@@ -57,82 +58,75 @@ export const AssignCaseModal: React.FC<AssignCaseModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop" id="osm-assign-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="modal-card" id="osm-assign-modal">
-        <div className="modal-header">
-          <div>
-            <h3 className="modal-title">{triageCase.assigneeId ? "Reassign Case" : "Assign Case"}</h3>
-            <p className="modal-subtitle">
-              Case: <strong>{triageCase.caseNumber}</strong> (Current Version: {triageCase.version})
-            </p>
-          </div>
-          <button className="btn-close" onClick={onClose} disabled={isSubmitting}>
-            ×
-          </button>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title={triageCase.assigneeId ? "Reassign Moderation Case" : "Assign Moderation Case"}
+      size="sm"
+      footer={
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", width: "100%" }}>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+            id="btn-cancel-assign"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            loading={isSubmitting}
+            disabled={!assigneeId.trim()}
+            onClick={handleSubmit}
+            id="btn-submit-assign"
+          >
+            Confirm Assignment
+          </Button>
         </div>
+      }
+    >
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <p style={{ color: "var(--osm-text-secondary)", fontSize: "0.875rem", lineHeight: 1.5, margin: 0 }}>
+          Assigning case <strong>{triageCase.caseNumber}</strong> to an academic reviewer for formal evidence investigation and resolution.
+        </p>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          {error && (
-            <div className={`form-error-banner ${isConflict ? "conflict-banner" : ""}`} id="assign-error-banner">
-              <span className="error-icon">{isConflict ? "⚠️" : "✕"}</span>
-              <div className="error-content">
-                <p>{error}</p>
-                {isConflict && (
-                  <button
-                    type="button"
-                    className="btn-secondary btn-sm"
-                    onClick={() => {
-                      onRefreshCase();
-                      onClose();
-                    }}
-                  >
-                    Reload Latest Case
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+        {error && (
+          <Alert
+            type={isConflict ? "warning" : "danger"}
+            message={error}
+            action={
+              isConflict ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    onRefreshCase();
+                    onClose();
+                  }}
+                >
+                  Reload Case
+                </Button>
+              ) : undefined
+            }
+          />
+        )}
 
-          <div className="form-group">
-            <label htmlFor="input-assignee-id" className="form-label">
-              Assignee Moderator ID <span className="required-star">*</span>
-            </label>
-            <input
-              id="input-assignee-id"
-              type="text"
-              className="form-input"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              placeholder="e.g. moderator_1, reviewer_senior"
-              disabled={isSubmitting}
-              required
-            />
-            <span className="form-hint">
-              Assigns this triage case to an authorized human moderator. Transition: <code>OPEN → ASSIGNED</code>.
-            </span>
-          </div>
-
-          <div className="modal-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              id="btn-cancel-assign"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              id="btn-submit-assign"
-              disabled={isSubmitting || !assigneeId.trim()}
-            >
-              {isSubmitting ? "Assigning..." : "Confirm Assignment"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <label htmlFor="input-assignee-id" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--osm-text-secondary)" }}>
+            Assigned Reviewer ID <span style={{ color: "var(--osm-danger)" }}>*</span>
+          </label>
+          <Input
+            id="input-assignee-id"
+            value={assigneeId}
+            onChange={(e) => setAssigneeId(e.target.value)}
+            placeholder="e.g. moderator_1"
+            disabled={isSubmitting}
+          />
+          <span style={{ fontSize: "0.75rem", color: "var(--osm-text-muted)" }}>
+            Select an authorized moderator or academic controller to take ownership of this investigation.
+          </span>
+        </div>
+      </form>
+    </Modal>
   );
 };

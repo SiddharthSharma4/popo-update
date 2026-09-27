@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import type { TriggerSentinelResponse } from "@osm/shared";
+import { UserRole } from "@osm/shared";
 import { analyticsService } from "../../services/analytics-service.ts";
 import type { AuthContext } from "../../services/api-client.ts";
+import { Modal, Button, Input, Alert } from "../ui";
 
-interface SentinelTriggerModalProps {
+export interface SentinelTriggerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (result: TriggerSentinelResponse) => void;
@@ -26,10 +28,15 @@ export const SentinelTriggerModal: React.FC<SentinelTriggerModalProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const isAdmin = auth.role === UserRole.ADMIN;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      setError("Administrative authorization is required to trigger cohort anomaly detection scans.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -48,7 +55,7 @@ export const SentinelTriggerModal: React.FC<SentinelTriggerModalProps> = ({
       onClose();
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Failed to execute SentinelFlag scan"
+        err instanceof Error ? err.message : "Failed to execute cohort anomaly detection scan."
       );
     } finally {
       setLoading(false);
@@ -56,149 +63,111 @@ export const SentinelTriggerModal: React.FC<SentinelTriggerModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop" id="osm-sentinel-modal-backdrop" onClick={onClose}>
-      <div
-        className="modal-container sentinel-trigger-modal"
-        id="osm-sentinel-trigger-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <div className="sentinel-modal-title-row">
-            <span className="brand-badge">Phase 4 / Phase 8</span>
-            <h2 className="modal-title" id="sentinel-modal-title">
-              Execute SentinelFlag Anomaly Scan
-            </h2>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Execute Statistical Anomaly Detection"
+      size="md"
+    >
+      <form onSubmit={handleSubmit} className="osm-modal-form" id="sentinel-trigger-form">
+        <p className="osm-modal-intro">
+          Initiate automated statistical evaluation across the active candidate cohort. Identifies
+          evaluator scoring variance exceeding peer thresholds and materializes actionable quality
+          signals for supervisory moderation.
+        </p>
+
+        {!isAdmin && (
+          <div style={{ marginBottom: "1rem" }}>
+            <Alert
+              type="warning"
+              title="Administrator Role Required"
+              message="Cohort-wide Sentinel scans are restricted to Examination Administrators. Switch to Administrator role to execute this scan."
+            />
           </div>
-          <button
-            className="btn-modal-close"
-            id="btn-close-sentinel-modal"
-            onClick={onClose}
-            disabled={loading}
-            aria-label="Close modal"
-          >
-            ×
-          </button>
+        )}
+
+        {error && (
+          <div style={{ marginBottom: "1rem" }}>
+            <Alert type="danger" title="Scan Execution Failed" message={error} />
+          </div>
+        )}
+
+        <div className="osm-form-group">
+          <label htmlFor="input-sentinel-cycle" className="osm-form-label">
+            Examination Cycle ID (Optional)
+          </label>
+          <Input
+            id="input-sentinel-cycle"
+            type="text"
+            placeholder="e.g. cycle-2026-demo"
+            value={cycleId}
+            onChange={(e) => setCycleId(e.target.value)}
+            disabled={loading || !isAdmin}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form" id="sentinel-trigger-form">
-          <p className="modal-intro-text">
-            Trigger statistical evaluation analysis across the active cohort. Detects evaluator
-            score deviations beyond peer thresholds and materializes actionable QualitySignals for
-            moderation triage (<code>01-product §16</code>, <code>INV-004</code>).
-          </p>
-
-          {error && (
-            <div className="form-error-banner" id="sentinel-trigger-error-banner">
-              <span className="error-icon">⚠</span>
-              <div className="error-content">
-                <strong>Sentinel Execution Failed:</strong>
-                <span>{error}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="sentinel-cycle-id">
-              Evaluation Cycle ID (Optional Filter)
+        <div className="osm-form-row-2">
+          <div className="osm-form-group">
+            <label htmlFor="input-sentinel-sample" className="osm-form-label">
+              Min. Sample Size (N scripts)
             </label>
-            <input
-              id="sentinel-cycle-id"
-              type="text"
-              className="form-input"
-              value={cycleId}
-              onChange={(e) => setCycleId(e.target.value)}
-              placeholder="e.g. cycle_2026_term1 (Leave empty for all cycles)"
-              disabled={loading}
+            <Input
+              id="input-sentinel-sample"
+              type="number"
+              min="1"
+              max="50"
+              value={minSampleSize}
+              onChange={(e) => setMinSampleSize(Number(e.target.value))}
+              disabled={loading || !isAdmin}
             />
-            <span className="form-hint">
-              Filters statistical analysis to evaluations within this cycle boundary.
-            </span>
           </div>
 
-          <div className="form-row-2">
-            <div className="form-group">
-              <label className="form-label" htmlFor="sentinel-min-sample">
-                Minimum Sample Size (N)
-              </label>
-              <input
-                id="sentinel-min-sample"
-                type="number"
-                min="1"
-                max="100"
-                className="form-input"
-                value={minSampleSize}
-                onChange={(e) => setMinSampleSize(Math.max(1, parseInt(e.target.value) || 1))}
-                disabled={loading}
-              />
-              <span className="form-hint">
-                Evaluators with fewer evaluations are tagged <code>INSUFFICIENT_DATA</code>.
-              </span>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="sentinel-threshold">
-                Moderate Deviation (Δ %)
-              </label>
-              <input
-                id="sentinel-threshold"
-                type="number"
-                min="1"
-                max="50"
-                className="form-input"
-                value={thresholdPercent}
-                onChange={(e) => setThresholdPercent(Math.max(1, parseInt(e.target.value) || 15))}
-                disabled={loading}
-              />
-              <span className="form-hint">Deviation threshold for HIGH severity signals.</span>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="sentinel-critical-threshold">
-              Critical Deviation (Δ %)
+          <div className="osm-form-group">
+            <label htmlFor="input-sentinel-threshold" className="osm-form-label">
+              Moderate Threshold (Δ %)
             </label>
-            <input
-              id="sentinel-critical-threshold"
+            <Input
+              id="input-sentinel-threshold"
               type="number"
               min="5"
-              max="100"
-              className="form-input"
-              value={criticalThresholdPercent}
-              onChange={(e) =>
-                setCriticalThresholdPercent(Math.max(5, parseInt(e.target.value) || 25))
-              }
-              disabled={loading}
+              max="50"
+              value={thresholdPercent}
+              onChange={(e) => setThresholdPercent(Number(e.target.value))}
+              disabled={loading || !isAdmin}
             />
-            <span className="form-hint">Deviation threshold for CRITICAL severity signals.</span>
           </div>
+        </div>
 
-          <div className="concurrency-info-box">
-            <strong>Non-Authoritative Invariant (INV-003):</strong> SentinelFlag scans generate
-            quality signals for human moderator review. Authoritative student marks, question scores,
-            and evaluation statuses remain strictly unaltered.
-          </div>
+        <div className="osm-form-group">
+          <label htmlFor="input-sentinel-critical" className="osm-form-label">
+            Critical Threshold (Δ %)
+          </label>
+          <Input
+            id="input-sentinel-critical"
+            type="number"
+            min="10"
+            max="100"
+            value={criticalThresholdPercent}
+            onChange={(e) => setCriticalThresholdPercent(Number(e.target.value))}
+            disabled={loading || !isAdmin}
+          />
+        </div>
 
-          <div className="modal-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              id="btn-cancel-sentinel"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary btn-sentinel-run"
-              id="btn-submit-sentinel"
-              disabled={loading}
-            >
-              {loading ? "Analyzing Cohort..." : "⚡ Run Sentinel Detection"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="osm-modal-actions-right" style={{ marginTop: "1.5rem" }}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            id="btn-confirm-sentinel-scan"
+            loading={loading}
+            disabled={!isAdmin}
+          >
+            ⚡ Run Detection Scan
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

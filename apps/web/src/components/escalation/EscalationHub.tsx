@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import type {
   TriageCaseResponse,
   QualitySignalResponse,
@@ -11,12 +12,16 @@ import { TriageQueue } from "./TriageQueue.tsx";
 import { TriageCaseDetail } from "./TriageCaseDetail.tsx";
 import { ResolutionModal } from "./ResolutionModal.tsx";
 import { AssignCaseModal } from "./AssignCaseModal.tsx";
+import { Alert, Button } from "../ui";
 
-interface EscalationHubProps {
+export interface EscalationHubProps {
   auth: AuthContext;
 }
 
 export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
+  const { caseId: routeCaseId } = useParams<{ caseId?: string }>();
+  const navigate = useNavigate();
+
   const [cases, setCases] = useState<TriageCaseResponse[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [selectedCase, setSelectedCase] = useState<TriageCaseResponse | null>(null);
@@ -26,11 +31,11 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
   const [loadingQueue, setLoadingQueue] = useState<boolean>(true);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [queueError, setQueueError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ message: string; type: "success" | "info" | "error" } | null>(null);
+  const [notice, setNotice] = useState<{ message: string; type: "success" | "warning" | "danger" } | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("" );
 
   const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
   const [isResolveModalOpen, setIsResolveModalOpen] = useState<boolean>(false);
@@ -42,21 +47,33 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
     try {
       const data = await triageService.listTriageCases(undefined, auth);
       setCases(data);
-      // Auto-select first case if none selected
-      if (data.length > 0 && !selectedCaseId) {
-        setSelectedCaseId(data[0].id);
+
+      // Auto-select based on routeCaseId or first case
+      if (data.length > 0) {
+        if (routeCaseId && data.some((c) => c.id === routeCaseId)) {
+          setSelectedCaseId(routeCaseId);
+        } else if (!selectedCaseId) {
+          setSelectedCaseId(data[0].id);
+        }
       }
     } catch (err: unknown) {
       setQueueError(err instanceof Error ? err.message : "Failed to load triage cases");
     } finally {
       setLoadingQueue(false);
     }
-  }, [auth, selectedCaseId]);
+  }, [auth, routeCaseId, selectedCaseId]);
 
   // Initial load
   useEffect(() => {
     loadQueue();
   }, [loadQueue]);
+
+  // Sync route param changes
+  useEffect(() => {
+    if (routeCaseId && routeCaseId !== selectedCaseId) {
+      setSelectedCaseId(routeCaseId);
+    }
+  }, [routeCaseId, selectedCaseId]);
 
   // Load selected case details & linked signal
   const loadCaseDetail = useCallback(
@@ -81,7 +98,7 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
       } catch (err: unknown) {
         setNotice({
           message: err instanceof Error ? err.message : "Failed to load case detail",
-          type: "error",
+          type: "danger",
         });
       } finally {
         setLoadingDetail(false);
@@ -100,10 +117,11 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
     }
   }, [selectedCaseId, loadCaseDetail]);
 
-  // Handle case selection
+  // Handle case selection with URL sync
   const handleSelectCase = (caseId: string) => {
     setSelectedCaseId(caseId);
     setNotice(null);
+    navigate(`/moderator/triage/${caseId}`);
   };
 
   // Handle assignment
@@ -118,7 +136,7 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
     setSelectedCase(updated);
     setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     setNotice({
-      message: `Case ${updated.caseNumber} assigned to ${assigneeId} (v${updated.version})`,
+      message: `Case ${updated.caseNumber} successfully assigned to ${assigneeId}.`,
       type: "success",
     });
   };
@@ -132,54 +150,67 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
     setSelectedResolution(result.resolution);
     setCases((prev) => prev.map((c) => (c.id === result.triageCase.id ? result.triageCase : c)));
     setNotice({
-      message: `Case ${result.triageCase.caseNumber} resolved as ${result.resolution.outcome}`,
+      message: `Case ${result.triageCase.caseNumber} resolved as ${result.resolution.outcome}.`,
       type: "success",
     });
   };
 
   return (
-    <div className="escalation-hub-container" id="osm-escalation-hub">
+    <div className="osm-hub-container" id="osm-escalation-hub">
       {/* Module Title Banner */}
-      <div className="escalation-hub-header">
+      <div className="osm-hub-header">
         <div>
-          <h1 className="module-title">EscalationHub</h1>
-          <p className="module-subtitle">
-            Prioritized moderation queue connecting quality signals to human investigation, evidence review,
-            and authoritative case resolution (<code>01-product §17</code>, <code>02-architecture §32</code>).
+          <h1 className="osm-hub-title">Moderator Triage & Escalation Workspace</h1>
+          <p className="osm-hub-subtitle">
+            Supervisory moderation hub connecting automated quality signals to human investigation,
+            comparative evidence inspection, and authoritative case resolution.
           </p>
         </div>
 
-        <div className="hub-header-actions">
-          <button
-            className="btn-secondary"
+        <div className="osm-hub-header__actions">
+          <Button
+            variant="secondary"
+            size="sm"
             id="btn-reload-hub"
             onClick={loadQueue}
-            disabled={loadingQueue}
+            loading={loadingQueue}
           >
             ↻ Refresh Queue
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Global Notice Toast / Alert */}
       {notice && (
-        <div className={`notice-banner notice-${notice.type}`} id="osm-hub-notice">
-          <span>{notice.message}</span>
-          <button className="btn-notice-dismiss" onClick={() => setNotice(null)}>×</button>
+        <div style={{ marginBottom: "1rem" }}>
+          <Alert
+            type={notice.type}
+            message={notice.message}
+            dismissible
+            onDismiss={() => setNotice(null)}
+          />
         </div>
       )}
 
       {queueError && (
-        <div className="notice-banner notice-error" id="osm-queue-error-banner">
-          <span>Error loading queue: {queueError}</span>
-          <button className="btn-secondary btn-sm" onClick={loadQueue}>Retry</button>
+        <div style={{ marginBottom: "1rem" }}>
+          <Alert
+            type="danger"
+            title="Queue Synchronization Error"
+            message={queueError}
+            action={
+              <Button size="sm" variant="secondary" onClick={loadQueue}>
+                Retry
+              </Button>
+            }
+          />
         </div>
       )}
 
       {/* Two-Pane Moderation Layout */}
-      <div className="hub-two-pane-layout">
-        {/* Left Pane: Triage Queue */}
-        <div className="pane-queue">
+      <div className="osm-hub-split">
+        {/* Left Pane: Triage Queue (~38%) */}
+        <div className="osm-hub-pane-queue">
           <TriageQueue
             cases={cases}
             selectedCaseId={selectedCaseId}
@@ -195,8 +226,8 @@ export const EscalationHub: React.FC<EscalationHubProps> = ({ auth }) => {
           />
         </div>
 
-        {/* Right Pane: Investigation & Detail */}
-        <div className="pane-detail">
+        {/* Right Pane: Investigation & Detail (~62%) */}
+        <div className="osm-hub-pane-detail">
           <TriageCaseDetail
             triageCase={selectedCase}
             signal={selectedSignal}

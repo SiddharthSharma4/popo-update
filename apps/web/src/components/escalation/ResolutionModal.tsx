@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { TriageCaseResponse, ResolveTriageCaseRequest } from "@osm/shared";
 import { ResolutionOutcome } from "@osm/shared";
 import { ApiError } from "../../services/api-client.ts";
+import { Modal, Button, Textarea, Alert } from "../ui";
 
 interface ResolutionModalProps {
   triageCase: TriageCaseResponse;
@@ -30,7 +31,7 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
-      setError("Resolution reason is mandatory (FR-009). Please enter a substantive rationale.");
+      setError("Please provide a substantive academic rationale justifying this resolution.");
       return;
     }
 
@@ -51,14 +52,14 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
       if (err instanceof ApiError) {
         if (err.statusCode === 409) {
           setIsConflict(true);
-          setError("Concurrency Conflict: This triage case was modified by another reviewer. Please reload the latest state before attempting resolution.");
+          setError("Concurrency Conflict: This moderation case was modified by another reviewer. Please reload the latest case state before attempting resolution.");
         } else if (err.statusCode === 403) {
-          setError(err.message || "Forbidden: Only authorized MODERATOR or ADMIN can resolve cases.");
+          setError(err.message || "Forbidden: Only authorized Moderators or Administrators can resolve moderation cases.");
         } else {
-          setError(err.message || `API Error ${err.statusCode}`);
+          setError(err.message || `Server Error (${err.statusCode})`);
         }
       } else {
-        setError(err instanceof Error ? err.message : "Failed to resolve triage case.");
+        setError(err instanceof Error ? err.message : "Failed to record case resolution.");
       }
     } finally {
       setIsSubmitting(false);
@@ -66,139 +67,129 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop" id="osm-resolution-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="modal-card" id="osm-resolution-modal">
-        <div className="modal-header">
-          <div>
-            <h3 className="modal-title">Record Human Resolution</h3>
-            <p className="modal-subtitle">
-              Case: <strong>{triageCase.caseNumber}</strong> (Concurrency Version: {triageCase.version})
-            </p>
-          </div>
-          <button className="btn-close" onClick={onClose} disabled={isSubmitting}>
-            ×
-          </button>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Record Authoritative Case Resolution"
+      size="md"
+      footer={
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", width: "100%" }}>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+            id="btn-cancel-resolution"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            loading={isSubmitting}
+            disabled={!reason.trim()}
+            onClick={handleSubmit}
+            id="btn-confirm-resolve"
+          >
+            Confirm Resolution ⚖️
+          </Button>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <p style={{ color: "var(--osm-text-secondary)", fontSize: "0.875rem", lineHeight: 1.5, margin: 0 }}>
+          Recording final moderation decision for Case <strong>{triageCase.caseNumber}</strong>. This action is authoritative, permanent, and cryptographically registered in the audit ledger.
+        </p>
+
+        {error && (
+          <Alert
+            type={isConflict ? "warning" : "danger"}
+            message={error}
+            action={
+              isConflict ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    onRefreshCase();
+                    onClose();
+                  }}
+                >
+                  Reload Case
+                </Button>
+              ) : undefined
+            }
+          />
+        )}
+
+        {/* Outcome Selector */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <label htmlFor="select-resolution-outcome" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--osm-text-secondary)" }}>
+            Resolution Outcome <span style={{ color: "var(--osm-danger)" }}>*</span>
+          </label>
+          <select
+            id="select-resolution-outcome"
+            className="osm-queue-filter-select"
+            style={{ width: "100%", padding: "0.5rem 0.75rem", fontSize: "0.875rem" }}
+            value={outcome}
+            onChange={(e) => setOutcome(e.target.value as ResolutionOutcome)}
+            disabled={isSubmitting}
+          >
+            <option value={ResolutionOutcome.CONFIRMED_VALID}>
+              CONFIRMED_VALID — Evaluator marks confirmed as compliant with rubric criteria
+            </option>
+            <option value={ResolutionOutcome.LEGITIMATE_VARIATION}>
+              LEGITIMATE_VARIATION — Scoring variance represents acceptable academic discretion
+            </option>
+            <option value={ResolutionOutcome.CORRECTION_REQUIRED}>
+              CORRECTION_REQUIRED — Scoring anomaly verified; re-evaluation or mark correction required
+            </option>
+            <option value={ResolutionOutcome.ESCALATED}>
+              ESCALATED — Escalated to Chief Examiner and Academic Review Committee
+            </option>
+            <option value={ResolutionOutcome.DISMISSED}>
+              DISMISSED — Signal dismissed as ungrounded or false-positive
+            </option>
+          </select>
+          <span style={{ fontSize: "0.75rem", color: "var(--osm-text-muted)" }}>
+            Selected outcome establishes the official academic finding for this moderation investigation.
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          {error && (
-            <div className={`form-error-banner ${isConflict ? "conflict-banner" : ""}`} id="resolution-error-banner">
-              <span className="error-icon">{isConflict ? "⚠️" : "✕"}</span>
-              <div className="error-content">
-                <p>{error}</p>
-                {isConflict && (
-                  <button
-                    type="button"
-                    className="btn-secondary btn-sm"
-                    id="btn-conflict-refresh"
-                    onClick={() => {
-                      onRefreshCase();
-                      onClose();
-                    }}
-                  >
-                    Reload Latest Case
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Outcome Selector */}
-          <div className="form-group">
-            <label htmlFor="select-resolution-outcome" className="form-label">
-              Resolution Outcome <span className="required-star">*</span>
+        {/* Mandatory Rationale */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <label htmlFor="input-resolution-reason" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--osm-text-secondary)" }}>
+              Substantive Rationale & Findings <span style={{ color: "var(--osm-danger)" }}>*</span>
             </label>
-            <select
-              id="select-resolution-outcome"
-              className="form-select"
-              value={outcome}
-              onChange={(e) => setOutcome(e.target.value as ResolutionOutcome)}
-              disabled={isSubmitting}
-            >
-              <option value={ResolutionOutcome.CONFIRMED_VALID}>
-                CONFIRMED_VALID — Evaluator marks confirmed as compliant
-              </option>
-              <option value={ResolutionOutcome.LEGITIMATE_VARIATION}>
-                LEGITIMATE_VARIATION — Variance is acceptable academic discretion
-              </option>
-              <option value={ResolutionOutcome.CORRECTION_REQUIRED}>
-                CORRECTION_REQUIRED — Scoring anomaly verified; correction needed
-              </option>
-              <option value={ResolutionOutcome.ESCALATED}>
-                ESCALATED — Escalated to Chief Examiner / Review Committee
-              </option>
-              <option value={ResolutionOutcome.DISMISSED}>
-                DISMISSED — False positive / ungrounded signal dismissed
-              </option>
-            </select>
-            <span className="form-hint">
-              Selected outcome determines the official domain classification per <code>05-domain §25-28</code>.
+            <span style={{ fontSize: "0.75rem", color: "var(--osm-text-muted)", fontFamily: "var(--osm-font-mono)" }}>
+              {reason.length} / 500
             </span>
           </div>
+          <Textarea
+            id="input-resolution-reason"
+            rows={3}
+            maxLength={500}
+            placeholder="Explain the academic evidence, rubric alignment, and factual basis justifying this resolution..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
 
-          {/* Mandatory Reason */}
-          <div className="form-group">
-            <label htmlFor="input-resolution-reason" className="form-label">
-              Resolution Reason / Rationale <span className="required-star">*</span>
-            </label>
-            <textarea
-              id="input-resolution-reason"
-              className="form-textarea"
-              rows={3}
-              placeholder="State the substantive findings justifying this resolution (e.g. reviewed answers against question 2 rubric; marks awarded are consistent with criteria)..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              disabled={isSubmitting}
-              required
-            />
-            <span className="form-hint">
-              Mandatory human rationale (FR-009). Stored permanently in immutable audit trail.
-            </span>
-          </div>
-
-          {/* Optional Reviewer Notes */}
-          <div className="form-group">
-            <label htmlFor="input-resolution-notes" className="form-label">
-              Reviewer Notes (Optional)
-            </label>
-            <textarea
-              id="input-resolution-notes"
-              className="form-textarea"
-              rows={2}
-              placeholder="Additional internal notes for subsequent moderation cycles..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Concurrency Info */}
-          <div className="concurrency-info-box">
-            <span>🔒 Concurrency Guard: Expected Version <strong>{triageCase.version}</strong></span>
-          </div>
-
-          {/* Modal Actions */}
-          <div className="modal-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              id="btn-cancel-resolution"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              id="btn-submit-resolution"
-              disabled={isSubmitting || !reason.trim()}
-            >
-              {isSubmitting ? "Submitting Resolution..." : "Confirm & Record Resolution"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Optional Notes */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <label htmlFor="input-resolution-notes" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--osm-text-secondary)" }}>
+            Internal Moderation Notes (Optional)
+          </label>
+          <Textarea
+            id="input-resolution-notes"
+            rows={2}
+            placeholder="Add internal supervisory notes or policy recommendations for future examination cycles..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+      </form>
+    </Modal>
   );
 };

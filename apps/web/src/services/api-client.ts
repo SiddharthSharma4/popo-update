@@ -40,6 +40,7 @@ export class ApiClient {
       headers["x-user-role"] = auth.role;
       headers["x-actor-type"] = auth.actorType;
       headers["x-actor-id"] = auth.actorId;
+      headers["x-evaluator-id"] = auth.actorId;
     }
     return headers;
   }

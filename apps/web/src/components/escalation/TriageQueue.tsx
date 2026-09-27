@@ -1,8 +1,11 @@
 import React from "react";
 import type { TriageCaseResponse } from "@osm/shared";
 import { TriageCaseStatus, SignalSeverity } from "@osm/shared";
+import { getScriptReference } from "../../fixtures/scriptReferences.ts";
+import { getActorDisplayName } from "../../services/actor-fixtures.ts";
+import { StatusBadge, Input, Skeleton, EmptyState } from "../ui";
 
-interface TriageQueueProps {
+export interface TriageQueueProps {
   cases: TriageCaseResponse[];
   selectedCaseId: string | null;
   onSelectCase: (caseId: string) => void;
@@ -47,145 +50,144 @@ export const TriageQueue: React.FC<TriageQueueProps> = ({
       const matchNumber = c.caseNumber.toLowerCase().includes(q);
       const matchEval = c.evaluationId.toLowerCase().includes(q);
       const matchAssignee = c.assigneeId?.toLowerCase().includes(q);
-      if (!matchNumber && !matchEval && !matchAssignee) return false;
+      const scriptInfo = getScriptReference(c.evaluationId);
+      const matchScriptRef = scriptInfo.displayRef.toLowerCase().includes(q);
+      const matchCandidate = scriptInfo.candidateLabel.toLowerCase().includes(q);
+      if (!matchNumber && !matchEval && !matchAssignee && !matchScriptRef && !matchCandidate) {
+        return false;
+      }
     }
     return true;
   });
 
-  const getPriorityClass = (priority: string) => {
-    switch (priority) {
-      case SignalSeverity.CRITICAL:
-        return "badge-critical";
-      case SignalSeverity.HIGH:
-        return "badge-high";
-      case SignalSeverity.MEDIUM:
-        return "badge-medium";
-      case SignalSeverity.LOW:
-        return "badge-low";
-      default:
-        return "badge-info";
-    }
-  };
-
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case TriageCaseStatus.OPEN:
-        return "pill-open";
-      case TriageCaseStatus.ASSIGNED:
-        return "pill-assigned";
-      case TriageCaseStatus.RESOLVED:
-        return "pill-resolved";
-      default:
-        return "pill-default";
-    }
-  };
-
   return (
-    <div className="triage-queue-card" id="osm-triage-queue">
-      {/* Metric Counters Bar */}
-      <div className="metrics-strip" id="osm-queue-metrics">
-        <div className="metric-item">
-          <span className="metric-label">Total Cases</span>
-          <span className="metric-value" id="metric-total-cases">{totalCount}</span>
+    <div className="osm-triage-queue-card" id="osm-triage-queue">
+      {/* Metric Counters Strip */}
+      <div className="osm-triage-metrics" id="osm-queue-metrics">
+        <div className="osm-triage-metric">
+          <span className="osm-triage-metric__label">Total Cases</span>
+          <span className="osm-triage-metric__val" id="metric-total-cases">{totalCount}</span>
         </div>
-        <div className="metric-item">
-          <span className="metric-label">Open</span>
-          <span className="metric-value text-warning" id="metric-open-cases">{openCount}</span>
+        <div className="osm-triage-metric">
+          <span className="osm-triage-metric__label">Open</span>
+          <span className="osm-triage-metric__val osm-triage-metric__val--warning" id="metric-open-cases">
+            {openCount}
+          </span>
         </div>
-        <div className="metric-item">
-          <span className="metric-label">Assigned</span>
-          <span className="metric-value text-cyan" id="metric-assigned-cases">{assignedCount}</span>
+        <div className="osm-triage-metric">
+          <span className="osm-triage-metric__label">Assigned</span>
+          <span className="osm-triage-metric__val osm-triage-metric__val--info" id="metric-assigned-cases">
+            {assignedCount}
+          </span>
         </div>
-        <div className="metric-item">
-          <span className="metric-label">Resolved</span>
-          <span className="metric-value text-success" id="metric-resolved-cases">{resolvedCount}</span>
+        <div className="osm-triage-metric">
+          <span className="osm-triage-metric__label">Resolved</span>
+          <span className="osm-triage-metric__val osm-triage-metric__val--success" id="metric-resolved-cases">
+            {resolvedCount}
+          </span>
         </div>
-        <div className="metric-item">
-          <span className="metric-label">High / Critical</span>
-          <span className="metric-value text-error" id="metric-critical-cases">{highOrCriticalCount}</span>
+        <div className="osm-triage-metric">
+          <span className="osm-triage-metric__label">High Priority</span>
+          <span className="osm-triage-metric__val osm-triage-metric__val--danger" id="metric-critical-cases">
+            {highOrCriticalCount}
+          </span>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="queue-filter-bar">
-        <div className="filter-group">
-          <label htmlFor="filter-case-status">Status:</label>
-          <select
-            id="filter-case-status"
-            className="filter-select"
-            value={statusFilter}
-            onChange={(e) => onStatusFilterChange(e.target.value)}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value={TriageCaseStatus.OPEN}>Open</option>
-            <option value={TriageCaseStatus.ASSIGNED}>Assigned</option>
-            <option value={TriageCaseStatus.RESOLVED}>Resolved</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="filter-case-priority">Priority:</label>
-          <select
-            id="filter-case-priority"
-            className="filter-select"
-            value={priorityFilter}
-            onChange={(e) => onPriorityFilterChange(e.target.value)}
-          >
-            <option value="ALL">All Priorities</option>
-            <option value={SignalSeverity.CRITICAL}>Critical</option>
-            <option value={SignalSeverity.HIGH}>High</option>
-            <option value={SignalSeverity.MEDIUM}>Medium</option>
-            <option value={SignalSeverity.LOW}>Low</option>
-          </select>
-        </div>
-
-        <div className="search-group">
-          <input
+      <div className="osm-triage-toolbar">
+        <div className="osm-triage-search">
+          <Input
             id="search-cases-input"
-            type="text"
-            className="search-input"
-            placeholder="Search case #, eval ID, assignee..."
+            placeholder="Search case, candidate, or reviewer..."
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
           />
         </div>
 
-        <button
-          id="btn-refresh-queue"
-          className="btn-refresh"
-          onClick={onRefresh}
-          disabled={loading}
-          title="Refresh queue"
-        >
-          {loading ? "Refreshing..." : "↻ Refresh"}
-        </button>
+        <div className="osm-triage-filters-row">
+          <div className="osm-triage-select-group">
+            <label htmlFor="filter-case-status" className="osm-triage-label">Status:</label>
+            <select
+              id="filter-case-status"
+              className="osm-queue-filter-select"
+              value={statusFilter}
+              onChange={(e) => onStatusFilterChange(e.target.value)}
+            >
+              <option value="ALL">All ({totalCount})</option>
+              <option value={TriageCaseStatus.OPEN}>Open ({openCount})</option>
+              <option value={TriageCaseStatus.ASSIGNED}>Assigned ({assignedCount})</option>
+              <option value={TriageCaseStatus.RESOLVED}>Resolved ({resolvedCount})</option>
+            </select>
+          </div>
+
+          <div className="osm-triage-select-group">
+            <label htmlFor="filter-case-priority" className="osm-triage-label">Priority:</label>
+            <select
+              id="filter-case-priority"
+              className="osm-queue-filter-select"
+              value={priorityFilter}
+              onChange={(e) => onPriorityFilterChange(e.target.value)}
+            >
+              <option value="ALL">All Priorities</option>
+              <option value={SignalSeverity.CRITICAL}>Critical</option>
+              <option value={SignalSeverity.HIGH}>High</option>
+              <option value={SignalSeverity.MEDIUM}>Medium</option>
+              <option value={SignalSeverity.LOW}>Low</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            id="btn-refresh-queue"
+            className="osm-btn osm-btn--secondary osm-btn--sm"
+            onClick={onRefresh}
+            disabled={loading}
+            title="Refresh queue"
+          >
+            {loading ? "..." : "↻"}
+          </button>
+        </div>
       </div>
 
-      {/* Case List Table / Cards */}
-      <div className="queue-list-container">
+      {/* Case Cards List */}
+      <div className="osm-triage-list-viewport">
         {loading && cases.length === 0 ? (
-          <div className="loading-state" id="osm-queue-loading">
-            <div className="spinner" />
-            <p>Loading moderation triage cases...</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ padding: "1rem", border: "1px solid var(--osm-border-subtle)", borderRadius: "var(--osm-radius-md)" }}>
+                <Skeleton variant="text" width="120px" height="18px" />
+                <Skeleton variant="text" width="180px" height="14px" style={{ marginTop: "6px" }} />
+              </div>
+            ))}
           </div>
         ) : filteredCases.length === 0 ? (
-          <div className="empty-state" id="osm-queue-empty">
-            <p className="empty-title">No Triage Cases Found</p>
-            <p className="empty-subtitle">
-              {cases.length === 0
-                ? "No quality signals have triggered moderation cases yet."
-                : "No cases match the selected filter criteria."}
-            </p>
+          <div style={{ padding: "2rem 1rem" }}>
+            <EmptyState
+              icon="📋"
+              title={
+                searchQuery || statusFilter !== "ALL" || priorityFilter !== "ALL"
+                  ? "No cases match filters"
+                  : "No triage cases active"
+              }
+              description={
+                searchQuery || statusFilter !== "ALL" || priorityFilter !== "ALL"
+                  ? "Try clearing filters or search terms."
+                  : "All quality signals have been evaluated or no signals have triggered investigation."
+              }
+            />
           </div>
         ) : (
-          <div className="case-cards-list" role="list">
+          <div className="osm-triage-cards" role="list">
             {filteredCases.map((c) => {
               const isSelected = c.id === selectedCaseId;
+              const scriptInfo = getScriptReference(c.evaluationId);
+
               return (
                 <div
                   key={c.id}
                   id={`case-card-${c.id}`}
-                  className={`case-card-item ${isSelected ? "selected" : ""}`}
+                  className={`osm-triage-card-item ${isSelected ? "osm-triage-card-item--selected" : ""}`}
                   onClick={() => onSelectCase(c.id)}
                   role="listitem"
                   tabIndex={0}
@@ -195,29 +197,25 @@ export const TriageQueue: React.FC<TriageQueueProps> = ({
                     }
                   }}
                 >
-                  <div className="case-card-header">
-                    <span className="case-card-number">{c.caseNumber}</span>
-                    <span className={`priority-badge ${getPriorityClass(c.priority)}`}>
-                      {c.priority}
-                    </span>
+                  <div className="osm-triage-card-top">
+                    <span className="osm-triage-case-number">{c.caseNumber}</span>
+                    <div style={{ display: "flex", gap: "0.35rem" }}>
+                      <StatusBadge status={c.priority} size="sm" showDot={false} />
+                      <StatusBadge status={c.status} size="sm" />
+                    </div>
                   </div>
 
-                  <div className="case-card-meta">
-                    <span className={`status-pill ${getStatusClass(c.status)}`}>
-                      {c.status}
-                    </span>
-                    <span className="version-tag">v{c.version}</span>
-                    <span className="assignee-text">
-                      {c.assigneeId ? `👤 ${c.assigneeId}` : "Unassigned"}
-                    </span>
+                  <div className="osm-triage-card-script">
+                    <span className="osm-triage-script-ref">{scriptInfo.displayRef}</span>
+                    <span className="osm-triage-candidate-sub">{scriptInfo.candidateLabel}</span>
                   </div>
 
-                  <div className="case-card-footer">
-                    <span className="evaluation-id-preview" title={c.evaluationId}>
-                      Eval: {c.evaluationId.slice(0, 8)}...
+                  <div className="osm-triage-card-footer">
+                    <span className="osm-triage-assignee">
+                      {c.assigneeId ? `👤 ${getActorDisplayName(c.assigneeId)}` : "Unassigned"}
                     </span>
-                    <span className="date-preview">
-                      {new Date(c.createdAt).toLocaleDateString()}
+                    <span className="osm-triage-date">
+                      {new Date(c.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                     </span>
                   </div>
                 </div>

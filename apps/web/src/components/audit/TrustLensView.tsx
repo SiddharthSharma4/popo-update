@@ -1,17 +1,19 @@
 /**
- * TrustLens & Audit Event Timeline UI Component.
+ * TrustLens — Immutable Examination Audit Ledger.
  * Conforms to:
- * - docs/contracts/10-demo-contract.md §26-28 (Audit & Outbox Demonstration)
- * - docs/contracts/06-api-contract.md §37-40 (Audit Event Inspection & Authorization)
- * - docs/contracts/08-data-contract.md §28-31 (Immutable Audit Integrity)
+ * - docs/11-frontend-design-contract.md §14.4, §21, §24 (TrustLens Redesign)
+ * - docs/12-frontend-redesign-build-plan.md FE-022
+ * - docs/contracts/08-data-contract.md (Immutable Audit Integrity)
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import type { AuditEventResponse, PaginatedAuditEventsResponse } from "@osm/shared";
 import { UserRole } from "@osm/shared";
 import { apiClient, type AuthContext, ApiError } from "../../services/api-client.ts";
+import { AuditTimelineItem } from "./AuditTimelineItem.tsx";
+import { Button, Input, Skeleton, EmptyState, Alert } from "../ui";
 
-interface TrustLensViewProps {
+export interface TrustLensViewProps {
   auth: AuthContext;
 }
 
@@ -20,12 +22,15 @@ export const TrustLensView: React.FC<TrustLensViewProps> = ({ auth }) => {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("ALL");
-  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [limit, setLimit] = useState<number>(50);
+
+  const isAuthorized = auth.role === UserRole.MODERATOR || auth.role === UserRole.ADMIN;
 
   const fetchAuditEvents = useCallback(async () => {
-    // Only MODERATOR and ADMIN can inspect audit events (06-api §12)
-    if (auth.role !== UserRole.MODERATOR && auth.role !== UserRole.ADMIN) {
+    if (!isAuthorized) {
       setLoading(false);
       return;
     }
@@ -33,193 +38,174 @@ export const TrustLensView: React.FC<TrustLensViewProps> = ({ auth }) => {
     setLoading(true);
     setError(null);
     try {
-      let queryPath = "/audit-events?limit=50";
+      let queryPath = `/audit-events?limit=${limit}`;
       if (entityTypeFilter !== "ALL") {
         queryPath += `&entityType=${encodeURIComponent(entityTypeFilter)}`;
       }
 
       const res = await apiClient.get<PaginatedAuditEventsResponse>(queryPath, auth);
-      setEvents(res.items);
-      setTotalCount(res.total);
-    } catch (err) {
+      setEvents(res.items || []);
+      setTotalCount(res.total || 0);
+    } catch (err: unknown) {
       if (err instanceof ApiError) {
-        setError(`Failed to fetch audit events: ${err.message} (${err.code ?? err.statusCode})`);
+        setError(err.message);
       } else {
-        setError(err instanceof Error ? err.message : "Error fetching audit events");
+        setError(err instanceof Error ? err.message : "Failed to retrieve audit ledger records.");
       }
     } finally {
       setLoading(false);
     }
-  }, [auth, entityTypeFilter]);
+  }, [auth, entityTypeFilter, isAuthorized, limit]);
 
   useEffect(() => {
     fetchAuditEvents();
   }, [fetchAuditEvents]);
 
-  const toggleExpand = (id: string) => {
-    setExpandedEventId((prev) => (prev === id ? null : id));
-  };
+  // Client-side text filter on loaded events
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery.trim()) return events;
+    const q = searchQuery.toLowerCase();
+    return events.filter((e) => {
+      const actorMatch = (e.actorId || "").toLowerCase().includes(q);
+      const entityMatch = (e.entityId || "").toLowerCase().includes(q);
+      const actionMatch = (e.action || "").toLowerCase().includes(q);
+      const typeMatch = (e.entityType || "").toLowerCase().includes(q);
+      return actorMatch || entityMatch || actionMatch || typeMatch;
+    });
+  }, [events, searchQuery]);
 
-  const isUnauthorized = auth.role !== UserRole.MODERATOR && auth.role !== UserRole.ADMIN;
-
-  if (isUnauthorized) {
+  // Role Boundary Guard for Examiners
+  if (!isAuthorized) {
     return (
-      <div className="unauthorized-card" id="audit-unauthorized-banner">
-        <h2>🔒 Restricted Supervisory Audit View</h2>
-        <p>
-          Audit inspection is strictly reserved for <strong>MODERATOR</strong> and <strong>ADMIN</strong> roles
-          per contract <code>06-api-contract.md §12</code> and security requirements.
-        </p>
-        <p>
-          Current active simulator role is <code>{auth.role}</code>. Switch to Moderator or Administrator using
-          the Role Switcher in the top header to inspect the immutable audit trail.
-        </p>
+      <div className="osm-page-container" style={{ padding: "2rem" }}>
+        <Alert
+          type="warning"
+          title="Restricted Supervisory Access"
+          message="The TrustLens Audit Ledger is restricted exclusively to authorized Moderators and Examination Administrators to preserve academic neutrality."
+        />
       </div>
     );
   }
 
-  const getActionBadgeClass = (action: string) => {
-    if (action.includes("CREATE")) return "badge-create";
-    if (action.includes("ASSIGN")) return "badge-assign";
-    if (action.includes("SUBMIT")) return "badge-submit";
-    if (action.includes("RESOLVE")) return "badge-resolve";
-    if (action.includes("SEED")) return "badge-seed";
-    return "badge-default";
-  };
-
   return (
-    <div className="trustlens-container" id="osm-trustlens-view">
-      {/* Header and Controls */}
-      <div className="trustlens-header-bar">
+    <div className="osm-trustlens-page" id="osm-trustlens-view">
+      {/* Top Institutional Header */}
+      <div className="osm-trustlens-header">
         <div>
-          <h2 className="view-title">TrustLens — Immutable Audit Trail</h2>
-          <p className="view-subtitle">
-            Cryptographically and transactionally coupled audit log proving unbroken consequential traceability.
-            Every evaluation submission, mark assignment, and moderation resolution is permanently recorded.
+          <div className="osm-trustlens-title-row">
+            <h1 className="osm-trustlens-title" id="trustlens-title">
+              TrustLens Audit Ledger
+            </h1>
+            <span className="osm-trustlens-integrity-pill">
+              🛡️ Tamper-Evident Ledger Verified
+            </span>
+          </div>
+          <p className="osm-trustlens-subtitle">
+            Cryptographically chained chronological audit stream documenting every evaluation mark,
+            moderation decision, and system event with actor accountability.
           </p>
         </div>
 
-        <div className="filter-controls">
-          <label htmlFor="filter-entity-type" className="filter-label">Filter Entity:</label>
+        <Button
+          variant="secondary"
+          size="sm"
+          id="btn-refresh-audit"
+          onClick={fetchAuditEvents}
+          loading={loading}
+        >
+          ↻ Refresh Ledger
+        </Button>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="osm-trustlens-controls">
+        <div className="osm-trustlens-filter-group">
+          <label htmlFor="filter-entity-type" className="osm-trustlens-label">
+            Filter Entity:
+          </label>
           <select
             id="filter-entity-type"
-            className="filter-select"
+            className="osm-trustlens-select"
             value={entityTypeFilter}
             onChange={(e) => setEntityTypeFilter(e.target.value)}
           >
-            <option value="ALL">All Entities</option>
-            <option value="Evaluation">Evaluation</option>
-            <option value="TriageCase">TriageCase</option>
-            <option value="Rubric">Rubric</option>
-            <option value="Demonstration">Demonstration</option>
+            <option value="ALL">All Entity Types</option>
+            <option value="Evaluation">Examiner Evaluations</option>
+            <option value="TriageCase">Moderation Triage Cases</option>
+            <option value="Demonstration">Examination Cohorts</option>
+            <option value="Rubric">Grading Rubrics</option>
           </select>
+        </div>
 
-          <button
-            id="btn-refresh-audit"
-            className="btn-secondary"
-            onClick={fetchAuditEvents}
-            disabled={loading}
-          >
-            {loading ? "..." : "↻ Refresh"}
-          </button>
+        <div className="osm-trustlens-search-box">
+          <Input
+            id="input-audit-search"
+            type="text"
+            placeholder="Search by actor, entity reference, or action..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Architectural Guarantee Box */}
-      <div className="guarantee-box">
-        <span className="guarantee-tag">Transactional Outbox & Audit Invariant (INV-005)</span>
-        <p className="guarantee-text">
-          Audit events are written within the same atomic SQLite transaction as the domain state. If a command fails or
-          is rejected, the audit log rolls back atomically with zero phantom event leakage.
-        </p>
-      </div>
-
+      {/* Error Alert */}
       {error && (
-        <div className="alert-box alert-error" id="audit-error-banner">
-          <span>⚠️ {error}</span>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <Alert type="danger" title="Audit Query Error" message={error} />
         </div>
       )}
 
-      {/* Event Timeline Table */}
-      {loading ? (
-        <div className="loading-card">
-          <p>Loading immutable audit records...</p>
+      {/* Meta Bar */}
+      <div className="osm-trustlens-meta-bar">
+        <span>
+          Showing <strong>{filteredEvents.length}</strong> of <strong>{totalCount}</strong> recorded ledger events
+        </span>
+        {searchQuery && (
+          <button
+            type="button"
+            className="osm-trustlens-clear-search"
+            onClick={() => setSearchQuery("")}
+          >
+            Clear Search
+          </button>
+        )}
+      </div>
+
+      {/* Timeline Stream */}
+      {loading && events.length === 0 ? (
+        <div className="osm-trustlens-skeleton-list">
+          <Skeleton variant="rectangle" width="100%" height="90px" />
+          <Skeleton variant="rectangle" width="100%" height="90px" />
+          <Skeleton variant="rectangle" width="100%" height="90px" />
         </div>
-      ) : events.length === 0 ? (
-        <div className="empty-audit-card">
-          <p>No audit events recorded for current filter. Execute evaluation or moderation actions to see events appear.</p>
-        </div>
+      ) : filteredEvents.length === 0 ? (
+        <EmptyState
+          title="No Audit Records Found"
+          description={
+            searchQuery || entityTypeFilter !== "ALL"
+              ? "No ledger events match the selected entity type or search query."
+              : "No audit events are currently recorded in this examination session."
+          }
+          icon="📋"
+        />
       ) : (
-        <div className="audit-table-wrapper">
-          <div className="table-meta-bar">
-            <span>Displaying <strong>{events.length}</strong> of <strong>{totalCount}</strong> recorded events</span>
-          </div>
+        <div className="osm-trustlens-timeline" id="audit-timeline-list">
+          {filteredEvents.map((evt) => (
+            <AuditTimelineItem key={evt.id} event={evt} />
+          ))}
+        </div>
+      )}
 
-          <table className="audit-table" id="table-audit-events">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>Actor</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((evt) => {
-                const isExpanded = expandedEventId === evt.id;
-
-                return (
-                  <React.Fragment key={evt.id}>
-                    <tr className="audit-row" id={`audit-row-${evt.id}`}>
-                      <td className="col-time">
-                        <span className="time-primary">{new Date(evt.occurredAt).toLocaleTimeString()}</span>
-                        <span className="time-secondary">{new Date(evt.occurredAt).toLocaleDateString()}</span>
-                      </td>
-                      <td className="col-action">
-                        <span className={`action-badge ${getActionBadgeClass(evt.action)}`}>
-                          {evt.action}
-                        </span>
-                      </td>
-                      <td className="col-entity">
-                        <span className="entity-type">{evt.entityType}</span>
-                        <code className="entity-id" title={evt.entityId}>{evt.entityId}</code>
-                      </td>
-                      <td className="col-actor">
-                        <span className="actor-type-pill">{evt.actorType}</span>
-                        <span className="actor-id">{evt.actorId}</span>
-                      </td>
-                      <td className="col-inspect">
-                        <button
-                          className="btn-link"
-                          id={`btn-expand-${evt.id}`}
-                          onClick={() => toggleExpand(evt.id)}
-                        >
-                          {isExpanded ? "Hide Details ▲" : "View Payload ▼"}
-                        </button>
-                      </td>
-                    </tr>
-
-                    {isExpanded && (
-                      <tr className="audit-detail-row" id={`audit-detail-${evt.id}`}>
-                        <td colSpan={5}>
-                          <div className="payload-inspect-box">
-                            <div className="payload-header">
-                              <span>Event ID: <code>{evt.id}</code></span>
-                              <span>Type: <code>{evt.eventType}</code></span>
-                            </div>
-                            <pre className="payload-json">
-                              {JSON.stringify(evt.details, null, 2)}
-                            </pre>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Load More Button */}
+      {!loading && events.length < totalCount && (
+        <div className="osm-trustlens-load-more">
+          <Button
+            variant="secondary"
+            id="btn-load-more-audit"
+            onClick={() => setLimit((prev) => prev + 50)}
+          >
+            Load Older Audit Events (+50)
+          </Button>
         </div>
       )}
     </div>
