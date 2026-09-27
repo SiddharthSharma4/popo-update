@@ -8,13 +8,13 @@
  *
  * Invariants:
  * - Represents workflow state, distinct from QualitySignal observation.
- * - Human-only moderation authority; AI cannot create or assign triage cases.
+ * - Human-only moderation authority; AI cannot create, assign, or resolve triage cases.
  * - Monotonically increasing version for optimistic concurrency control.
- * - Hard boundary: Resolution logic belongs to TASK-P5-MOD-002 and is NOT implemented here.
+ * - Human-authoritative Resolution workflow per TASK-P5-MOD-002.
  */
 
 import { randomUUID } from "node:crypto";
-import { TriageCaseStatus, SignalSeverity } from "@osm/shared";
+import { TriageCaseStatus, SignalSeverity, ResolutionOutcome } from "@osm/shared";
 import { InvalidArgumentError, InvalidStateTransitionError } from "../errors.js";
 
 export { TriageCaseStatus };
@@ -153,6 +153,29 @@ export class TriageCase {
     if (this._status === TriageCaseStatus.OPEN) {
       this._status = TriageCaseStatus.ASSIGNED;
     }
+    this._version += 1;
+    this._updatedAt = new Date().toISOString();
+  }
+
+  resolve(outcome: ResolutionOutcome, reason: string, actorId: string): void {
+    if (this._status === TriageCaseStatus.RESOLVED) {
+      throw new InvalidStateTransitionError(
+        "TriageCase",
+        this._status,
+        TriageCaseStatus.RESOLVED
+      );
+    }
+    if (!reason?.trim()) {
+      throw new InvalidArgumentError("Resolution reason is required.");
+    }
+    if (!actorId?.trim()) {
+      throw new InvalidArgumentError("Actor ID is required to resolve TriageCase.");
+    }
+    if (!outcome || !Object.values(ResolutionOutcome).includes(outcome)) {
+      throw new InvalidArgumentError(`Invalid resolution outcome: ${outcome}`);
+    }
+
+    this._status = TriageCaseStatus.RESOLVED;
     this._version += 1;
     this._updatedAt = new Date().toISOString();
   }

@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from "react";
 import type { HealthResponse } from "@osm/shared";
-import { apiClient } from "./services/api-client.ts";
+import { UserRole, ActorType } from "@osm/shared";
+import { apiClient, type AuthContext } from "./services/api-client.ts";
+import { demoService } from "./services/demo-service.ts";
+import { RoleSwitcher } from "./components/common/RoleSwitcher.tsx";
+import { EscalationHub } from "./components/escalation/EscalationHub.tsx";
+import { QualityPulseDashboard } from "./components/analytics/QualityPulseDashboard.tsx";
+import { EvaluationWorkspace } from "./components/evaluation/EvaluationWorkspace.tsx";
+import { TrustLensView } from "./components/audit/TrustLensView.tsx";
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSeeding, setIsSeeding] = useState<boolean>(false);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
+  const [seedFeedback, setSeedFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Demo actor context (DEVELOPMENT / DEMO actor simulator only; server strictly enforces authorization)
+  const [auth, setAuth] = useState<AuthContext>({
+    role: UserRole.MODERATOR,
+    actorId: "moderator_1",
+    actorType: ActorType.USER,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -34,6 +51,47 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  const handleSeedDemo = async () => {
+    setIsSeeding(true);
+    setSeedFeedback(null);
+    try {
+      const res = await demoService.seedDemoCohort(auth);
+      setSeedFeedback({
+        type: "success",
+        text: `Demo Seeded Successfully (${res.status}): Cycle "${res.cycleId}", ${res.evaluationsCount} evaluations, ${res.signalsCount} signals, ${res.triageCasesCount} triage cases.`,
+      });
+    } catch (err: any) {
+      setSeedFeedback({
+        type: "error",
+        text: err.message || "Failed to seed demo scenario.",
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const handleResetDemo = async () => {
+    if (!window.confirm("Are you sure you want to reset the canonical demo scenario? All canonical demo evaluations, signals, triage cases, and resolutions will be removed.")) {
+      return;
+    }
+    setIsResetting(true);
+    setSeedFeedback(null);
+    try {
+      const res = await demoService.resetDemoCohort(auth);
+      setSeedFeedback({
+        type: "success",
+        text: `Demo Reset Successfully (${res.status}): Removed ${res.evaluationsRemoved} evaluations, ${res.signalsRemoved} signals, ${res.triageCasesRemoved} triage cases, ${res.resolutionsRemoved} resolutions.`,
+      });
+    } catch (err: any) {
+      setSeedFeedback({
+        type: "error",
+        text: err.message || "Failed to reset demo scenario.",
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <>
       <header className="app-header" id="osm-app-header">
@@ -44,6 +102,9 @@ export const App: React.FC = () => {
             {health?.environment.toUpperCase() || "DEV"}
           </span>
         </div>
+
+        {/* Demo Actor Simulator Switcher */}
+        <RoleSwitcher auth={auth} onAuthChange={setAuth} />
 
         <div className="header-status" id="osm-header-status">
           <div className="status-indicator">
@@ -67,6 +128,51 @@ export const App: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Admin Demo Seeder Bar - Restricted to ADMIN Role */}
+      {auth.role === UserRole.ADMIN && (
+        <div className="admin-demo-toolbar" id="admin-demo-toolbar">
+          <div className="admin-toolbar-inner">
+            <div className="admin-toolbar-info">
+              <span className="admin-badge">ADMIN CONTROL</span>
+              <span className="admin-toolbar-label">Deterministic Demo Orchestration (Golden Path)</span>
+            </div>
+            <div className="admin-toolbar-actions">
+              <button
+                id="btn-admin-seed-demo"
+                className="btn-seed-demo"
+                onClick={handleSeedDemo}
+                disabled={isSeeding || isResetting}
+              >
+                {isSeeding ? "⚡ Seeding Canonical Scenario..." : "⚡ Seed Deterministic Demo Scenario"}
+              </button>
+              <button
+                id="btn-admin-reset-demo"
+                className="btn-reset-demo"
+                onClick={handleResetDemo}
+                disabled={isSeeding || isResetting}
+              >
+                {isResetting ? "🔄 Resetting Demo Scenario..." : "🔄 Reset Demo Scenario"}
+              </button>
+            </div>
+          </div>
+          {seedFeedback && (
+            <div
+              className={`seed-feedback-banner ${seedFeedback.type === "success" ? "feedback-success" : "feedback-error"}`}
+              id="seed-feedback-banner"
+            >
+              <span>{seedFeedback.type === "success" ? "✓" : "⚠️"} {seedFeedback.text}</span>
+              <button
+                className="feedback-dismiss"
+                id="btn-dismiss-seed-feedback"
+                onClick={() => setSeedFeedback(null)}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <main className="app-container" id="osm-main-container">
         <nav className="nav-tabs" id="osm-nav-tabs">
@@ -205,15 +311,30 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab !== "overview" && (
-          <div className="hero-card" id="osm-placeholder-view">
-            <h2 className="hero-title">{activeTab.toUpperCase()} Module</h2>
-            <p className="hero-subtitle">
-              This module belongs to a subsequent roadmap phase according to docs/planning/03-build-roadmap.md.
-              It will be implemented incrementally following Phase 0 Foundation verification.
-            </p>
-          </div>
-        )}
+        {/* Phase 2: Evaluation Workspace */}
+        {activeTab === "workspace" && <EvaluationWorkspace auth={auth} />}
+
+        {/* Phase 5: EscalationHub Moderation Experience */}
+        {activeTab === "escalation" && <EscalationHub auth={auth} />}
+
+        {/* Phase 8: QualityPulse Analytics Dashboard */}
+        {activeTab === "pulse" && <QualityPulseDashboard auth={auth} />}
+
+        {/* Phase 6: TrustLens & Audit Ledger */}
+        {activeTab === "audit" && <TrustLensView auth={auth} />}
+
+        {activeTab !== "overview" &&
+          activeTab !== "workspace" &&
+          activeTab !== "escalation" &&
+          activeTab !== "pulse" &&
+          activeTab !== "audit" && (
+            <div className="hero-card" id="osm-placeholder-view">
+              <h2 className="hero-title">{activeTab.toUpperCase()} Module</h2>
+              <p className="hero-subtitle">
+                This module belongs to a subsequent roadmap phase according to docs/planning/03-build-roadmap.md.
+              </p>
+            </div>
+          )}
       </main>
     </>
   );

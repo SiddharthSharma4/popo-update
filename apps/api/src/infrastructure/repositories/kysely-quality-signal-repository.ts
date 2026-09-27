@@ -73,6 +73,16 @@ export class KyselyQualitySignalRepository implements QualitySignalRepository {
     return rows.map((r) => this.toDomain(r));
   }
 
+  async findAll(): Promise<QualitySignal[]> {
+    const rows = await this.db
+      .selectFrom("quality_signals")
+      .selectAll()
+      .orderBy("created_at", "asc")
+      .execute();
+
+    return rows.map((r) => this.toDomain(r));
+  }
+
   async findByEvaluationAndType(
     evaluationId: string,
     version: number,

@@ -362,6 +362,8 @@ export class KyselyEvaluationRepository implements EvaluationRepository {
 
   async delete(id: string, tx?: KyselyTx): Promise<void> {
     const executor = tx ?? this.db;
+    await executor.deleteFrom("evaluation_marks").where("evaluation_id", "=", id).execute();
+    await executor.deleteFrom("questions").where("evaluation_id", "=", id).execute();
     await executor.deleteFrom("evaluations").where("id", "=", id).execute();
   }
 }

@@ -111,6 +111,25 @@ export class CreateTriageCaseHandler {
         },
       });
 
+      // 7. Record atomic AuditEvent
+      await scope.audit.record({
+        eventType: "TriageCaseCreated",
+        actorType: command.actorType === "SYSTEM" ? "SYSTEM" : "USER",
+        actorId: command.actorId,
+        entityType: "TriageCase",
+        entityId: triageCase.id,
+        action: "CREATE_TRIAGE_CASE",
+        details: {
+          caseId: triageCase.id,
+          caseNumber: triageCase.caseNumber,
+          qualitySignalId: triageCase.qualitySignalId,
+          evaluationId: triageCase.evaluationId,
+          evaluationCycleId: triageCase.evaluationCycleId,
+          priority: triageCase.priority,
+          status: triageCase.status,
+        },
+      });
+
       return toTriageCaseDto(triageCase);
     });
   }

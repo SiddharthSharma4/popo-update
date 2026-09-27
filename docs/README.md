@@ -65,6 +65,13 @@ Iterative refinement and quality loops for PRD, architecture, and build planning
 
 ---
 
+### 6. `docs/demo/` — Hackathon Demonstration & Walkthrough
+Demo script, persona guides, judge FAQ, and system walkthrough for live evaluation.
+
+* [`HACKATHON-DEMO-GUIDE.md`](file:///c:/Users/siddh/Desktop/POPO%20-%20updrage/docs/demo/HACKATHON-DEMO-GUIDE.md) — Master Hackathon Demo Guide, 12-step scenario, AI boundary specifications, and 10-scene demo script
+
+---
+
 ## Authority & Governance
 
 1. **Contracts govern behavior; code implements contracts.**

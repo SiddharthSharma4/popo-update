@@ -9,4 +9,5 @@ export interface RubricRepository {
   findByIdAndVersion(id: string, version: number): Promise<Rubric | null>;
   findLatestById(id: string): Promise<Rubric | null>;
   save(rubric: Rubric): Promise<void>;
+  delete(id: string, version?: number): Promise<void>;
 }

@@ -8,6 +8,16 @@ import cors from "@fastify/cors";
 import type { AppConfig } from "../config/index.js";
 import type { KyselyDb } from "../infrastructure/database/database.js";
 import type { EvaluationApplicationService } from "../application/services/evaluation.service.js";
+import type {
+  QualityAnalyticsService,
+  QualityPulseService,
+} from "../application/analytics/index.js";
+import type {
+  IngestOsmEvaluationHandler,
+  IngestOsmBatchHandler,
+} from "../application/commands/ingest-osm-evaluation.command.js";
+import type { DemoScenarioService } from "../application/demo/demo-scenario.service.js";
+import type { AiService } from "../application/ai/ai-service.js";
 import { apiV1Routes } from "./routes/index.js";
 import { logger } from "../infrastructure/logging/logger.js";
 import { mapErrorToHttpResponse } from "./errors/error-mapper.js";
@@ -16,10 +26,26 @@ export interface ServerOptions {
   config: AppConfig;
   db: KyselyDb;
   evaluationService?: EvaluationApplicationService;
+  analyticsService?: QualityAnalyticsService;
+  qualityPulseService?: QualityPulseService;
+  ingestHandler?: IngestOsmEvaluationHandler;
+  batchHandler?: IngestOsmBatchHandler;
+  demoService?: DemoScenarioService;
+  aiService?: AiService;
 }
 
 export async function createServer(options: ServerOptions): Promise<FastifyInstance> {
-  const { config, db, evaluationService } = options;
+  const {
+    config,
+    db,
+    evaluationService,
+    analyticsService,
+    qualityPulseService,
+    ingestHandler,
+    batchHandler,
+    demoService,
+    aiService,
+  } = options;
 
   const app = Fastify({
     logger: false, // We use our structured domain-aware logger
@@ -51,7 +77,19 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
   });
 
   // Register Canonical /api/v1 routes
-  await app.register(apiV1Routes({ db, evaluationService }), { prefix: "/api/v1" });
+  await app.register(
+    apiV1Routes({
+      db,
+      evaluationService,
+      analyticsService,
+      qualityPulseService,
+      ingestHandler,
+      batchHandler,
+      demoService,
+      aiService,
+    }),
+    { prefix: "/api/v1" }
+  );
 
   return app;
 }

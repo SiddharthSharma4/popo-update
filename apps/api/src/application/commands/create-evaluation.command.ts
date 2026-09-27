@@ -6,7 +6,7 @@
 
 import { Evaluation } from "../../domain/evaluation/evaluation.js";
 import type { UnitOfWork } from "../common/unit-of-work.js";
-import { EntityNotFoundError, InvalidCommandError } from "../common/errors.js";
+import { EntityNotFoundError, InvalidCommandError, UnauthorizedActionError } from "../common/errors.js";
 import { type EvaluationDto, toEvaluationDto } from "../dtos/evaluation.dto.js";
 
 export interface CreateEvaluationCommand {
@@ -24,6 +24,9 @@ export interface CreateEvaluationCommand {
     rubricCriteriaId?: string | null;
     orderIndex: number;
   }[];
+  actorType?: string;
+  actorId?: string;
+  userRole?: string;
 }
 
 export class CreateEvaluationHandler {
@@ -40,6 +43,22 @@ export class CreateEvaluationHandler {
       throw new InvalidCommandError(
         "CreateEvaluation",
         "At least one question is required to create an evaluation."
+      );
+    }
+
+    // AI cannot create evaluations (INV-003)
+    if (command.actorType === "AI" || command.userRole === "AI") {
+      throw new UnauthorizedActionError(
+        "CREATE_EVALUATION",
+        "AI cannot create authoritative evaluations. Academic evaluation requires authorized human attribution."
+      );
+    }
+
+    // Role check: Examiners may only create evaluations assigned to themselves
+    if (command.userRole === "EXAMINER" && command.actorId && command.evaluatorId !== command.actorId) {
+      throw new UnauthorizedActionError(
+        "CREATE_EVALUATION",
+        `Examiner '${command.actorId}' cannot create evaluation assigned to '${command.evaluatorId}'.`
       );
     }
 

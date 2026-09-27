@@ -25,3 +25,6 @@ export * from "./quality-signal/index.js";
 // Moderation & TriageCase Aggregate and Repository (TASK-P5-MOD-001)
 export * from "./moderation/index.js";
 
+// Audit Aggregate and Repository (TASK-P6-AUDIT-001)
+export * from "./audit/index.js";
+

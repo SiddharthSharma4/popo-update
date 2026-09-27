@@ -9,6 +9,7 @@ export interface QualitySignalRepository {
   findById(id: string): Promise<QualitySignal | null>;
   findByEvaluationId(evaluationId: string): Promise<QualitySignal[]>;
   findReviewable(): Promise<QualitySignal[]>;
+  findAll(): Promise<QualitySignal[]>;
   findByEvaluationAndType(
     evaluationId: string,
     version: number,

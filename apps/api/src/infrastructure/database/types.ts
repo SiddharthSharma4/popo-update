@@ -125,6 +125,18 @@ export interface TriageCasesTable {
   updated_at: string; // ISO 8601 UTC
 }
 
+export interface ResolutionsTable {
+  id: string;
+  triage_case_id: string;
+  evaluation_id: string;
+  outcome: string; // ResolutionOutcome enum
+  reason: string;
+  moderator_id: string;
+  notes: string | null;
+  evidence_references: string | null; // JSON stringified string[]
+  created_at: string; // ISO 8601 UTC
+}
+
 export interface Database {
   outbox_events: OutboxEventsTable;
   audit_events: AuditEventsTable;
@@ -135,5 +147,6 @@ export interface Database {
   evaluation_marks: EvaluationMarksTable;
   quality_signals: QualitySignalsTable;
   triage_cases: TriageCasesTable;
+  resolutions: ResolutionsTable;
 }
 

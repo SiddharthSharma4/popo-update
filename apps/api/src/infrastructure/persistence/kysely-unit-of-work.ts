@@ -18,7 +18,9 @@ import { KyselyEvaluationRepository } from "../repositories/kysely-evaluation-re
 import { KyselyRubricRepository } from "../repositories/kysely-rubric-repository.js";
 import { KyselyQualitySignalRepository } from "../repositories/kysely-quality-signal-repository.js";
 import { KyselyTriageCaseRepository } from "../repositories/kysely-triage-case-repository.js";
-
+import { KyselyResolutionRepository } from "../repositories/kysely-resolution-repository.js";
+import { KyselyAuditRepository } from "../repositories/kysely-audit-repository.js";
+import { KyselyIdempotencyRepository } from "../repositories/kysely-idempotency-repository.js";
 
 export class KyselyOutboxRepository implements OutboxRepository {
   constructor(private readonly trx: KyselyTx) {}
@@ -45,42 +47,31 @@ export class KyselyOutboxRepository implements OutboxRepository {
   }
 }
 
-export class KyselyAuditRepository implements AuditRepository {
-  constructor(private readonly trx: KyselyTx) {}
-
-  async record(event: AuditEventInput): Promise<void> {
-    await this.trx
-      .insertInto("audit_events")
-      .values({
-        id: event.id ?? randomUUID(),
-        event_type: event.eventType,
-        actor_type: event.actorType,
-        actor_id: event.actorId,
-        entity_type: event.entityType,
-        entity_id: event.entityId,
-        action: event.action,
-        details: JSON.stringify(event.details),
-        occurred_at: event.occurredAt ?? new Date().toISOString(),
-      })
-      .execute();
-  }
-}
-
 export class KyselyUnitOfWork implements UnitOfWork {
+  private queue: Promise<unknown> = Promise.resolve();
+
   constructor(private readonly db: KyselyDb) {}
 
   async execute<T>(operation: (scope: UnitOfWorkScope) => Promise<T>): Promise<T> {
-    return this.db.transaction().execute(async (trx) => {
-      const scope: UnitOfWorkScope = {
-        evaluations: new KyselyEvaluationRepository(trx),
-        rubrics: new KyselyRubricRepository(trx),
-        qualitySignals: new KyselyQualitySignalRepository(trx),
-        triageCases: new KyselyTriageCaseRepository(trx),
-        outbox: new KyselyOutboxRepository(trx),
-        audit: new KyselyAuditRepository(trx),
-      };
+    const run = async () => {
+      return this.db.transaction().execute(async (trx) => {
+        const scope: UnitOfWorkScope = {
+          evaluations: new KyselyEvaluationRepository(trx),
+          rubrics: new KyselyRubricRepository(trx),
+          qualitySignals: new KyselyQualitySignalRepository(trx),
+          triageCases: new KyselyTriageCaseRepository(trx),
+          resolutions: new KyselyResolutionRepository(trx),
+          outbox: new KyselyOutboxRepository(trx),
+          audit: new KyselyAuditRepository(trx),
+          idempotency: new KyselyIdempotencyRepository(trx),
+        };
 
-      return operation(scope);
-    });
+        return operation(scope);
+      });
+    };
+
+    const next = this.queue.then(run, run);
+    this.queue = next.catch(() => {});
+    return next;
   }
 }

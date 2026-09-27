@@ -18,6 +18,7 @@ export interface AssignMarkCommand {
   awardedMarks: number;
   evaluatorId: string;
   actorType?: "USER" | "AI" | "SYSTEM";
+  userRole?: string;
   comments?: string | null;
   isAnnotated?: boolean;
 }
@@ -38,7 +39,7 @@ export class AssignMarkHandler {
 
     // Hard Invariant: AI Non-Authority Boundary (docs/contracts/05-domain-contract.md INV-003)
     // AI outputs are advisory only and must never directly assign authoritative marks.
-    if (command.actorType === "AI") {
+    if (command.actorType === "AI" || command.userRole === "AI") {
       throw new UnauthorizedActionError(
         "ASSIGN_MARK",
         "AI cannot assign authoritative marks. Academic evaluation requires authorized human attribution."
@@ -49,6 +50,17 @@ export class AssignMarkHandler {
       const evaluation = await scope.evaluations.findById(command.evaluationId);
       if (!evaluation) {
         throw new EntityNotFoundError("Evaluation", command.evaluationId);
+      }
+
+      // Check assignment authorization: examiners may only assign marks to their own assigned evaluations
+      if (
+        command.userRole === "EXAMINER" &&
+        evaluation.evaluatorId !== command.evaluatorId
+      ) {
+        throw new UnauthorizedActionError(
+          "ASSIGN_MARK",
+          `Only the assigned evaluator (${evaluation.evaluatorId}) may assign marks to evaluation ${evaluation.id}.`
+        );
       }
 
       // Delegate business invariants to the domain aggregate

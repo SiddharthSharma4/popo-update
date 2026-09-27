@@ -84,4 +84,13 @@ export class KyselyRubricRepository implements RubricRepository {
       })
       .execute();
   }
+
+  async delete(id: string, version?: number, tx?: KyselyTx): Promise<void> {
+    const executor = tx ?? this.db;
+    let query = executor.deleteFrom("rubrics").where("id", "=", id);
+    if (version !== undefined) {
+      query = query.where("version", "=", version);
+    }
+    await query.execute();
+  }
 }

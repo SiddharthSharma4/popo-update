@@ -22,6 +22,7 @@ export interface SubmitEvaluationCommand {
   evaluationId: string;
   evaluatorId: string;
   actorType?: "USER" | "AI" | "SYSTEM";
+  userRole?: string;
 }
 
 export class SubmitEvaluationHandler {
@@ -48,7 +49,7 @@ export class SubmitEvaluationHandler {
     }
 
     // AI cannot submit an evaluation (INV-003)
-    if (command.actorType === "AI") {
+    if (command.actorType === "AI" || command.userRole === "AI") {
       throw new UnauthorizedActionError(
         "SUBMIT_EVALUATION",
         "AI cannot finalize or submit examination evaluations."

@@ -5,9 +5,10 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
+import { ActorType } from "@osm/shared";
 import type { QualitySignalRepository } from "../../domain/quality-signal/quality-signal-repository.js";
 import { toQualitySignalDto } from "../../application/dtos/quality-signal.dto.js";
-import { EntityNotFoundError } from "../../application/common/errors.js";
+import { EntityNotFoundError, InvalidCommandError, UnauthorizedActionError } from "../../application/common/errors.js";
 
 export const qualitySignalRoutes = (
   qualitySignalRepo: QualitySignalRepository
@@ -21,9 +22,25 @@ export const qualitySignalRoutes = (
     fastify.get<{
       Querystring: { evaluationId?: string; status?: string };
     }>("/", async (request, reply) => {
+      const actorType = (request.headers["x-actor-type"] as string)?.toUpperCase();
+      const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+
+      if (actorType === ActorType.AI || userRole === "AI") {
+        throw new UnauthorizedActionError(
+          "INSPECT_QUALITY_SIGNALS",
+          "AI actors are not authorized to inspect quality signals."
+        );
+      }
+
       const { evaluationId, status } = request.query;
 
-      if (evaluationId) {
+      if (evaluationId !== undefined) {
+        if (!evaluationId.trim()) {
+          throw new InvalidCommandError(
+            "ListQualitySignals",
+            "Evaluation ID cannot be empty or whitespace."
+          );
+        }
         const signals = await qualitySignalRepo.findByEvaluationId(evaluationId.trim());
         return reply.code(200).send(signals.map(toQualitySignalDto));
       }
@@ -46,10 +63,27 @@ export const qualitySignalRoutes = (
     fastify.get<{ Params: { signalId: string } }>(
       "/:signalId",
       async (request, reply) => {
+        const actorType = (request.headers["x-actor-type"] as string)?.toUpperCase();
+        const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "INSPECT_QUALITY_SIGNALS",
+            "AI actors are not authorized to inspect quality signals."
+          );
+        }
+
         const { signalId } = request.params;
+        if (!signalId || signalId.trim() === "") {
+          throw new InvalidCommandError(
+            "GetQualitySignal",
+            "Signal ID cannot be empty or whitespace."
+          );
+        }
+
         const signal = await qualitySignalRepo.findById(signalId.trim());
         if (!signal) {
-          throw new EntityNotFoundError("QualitySignal", signalId);
+          throw new EntityNotFoundError("QualitySignal", signalId.trim());
         }
 
         return reply.code(200).send(toQualitySignalDto(signal));

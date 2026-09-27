@@ -412,32 +412,32 @@ The following table is the authoritative high-level task registry.
 | TASK-P4-INTEL-001       | P4    | INTELLIGENCE   | CRITICAL | DONE    | P3 complete             | Implement first statistical quality detector               |
 | TASK-P4-INTEL-002       | P4    | INTELLIGENCE   | HIGH     | DONE    | TASK-P4-INTEL-001       | Establish detector framework                               |
 | TASK-P4-INTEL-003       | P4    | TESTING        | HIGH     | DONE    | TASK-P4-INTEL-002       | Verify detector behavior                                   |
-| TASK-P5-MOD-001         | P5    | MODERATION     | CRITICAL | BACKLOG | P3 complete             | Implement TriageCase workflow                              |
-| TASK-P5-MOD-002         | P5    | MODERATION     | CRITICAL | BACKLOG | TASK-P5-MOD-001         | Implement human Resolution workflow                        |
-| TASK-P5-MOD-003         | P5    | UI             | HIGH     | BACKLOG | TASK-P5-MOD-002         | Implement moderator review experience                      |
-| TASK-P5-MOD-004         | P5    | TESTING        | HIGH     | BACKLOG | TASK-P5-MOD-002         | Verify moderation lifecycle                                |
-| TASK-P6-AUDIT-001       | P6    | AUDIT          | CRITICAL | BACKLOG | P5 complete             | Implement immutable audit event recording                  |
-| TASK-P6-AUDIT-002       | P6    | AUDIT          | HIGH     | BACKLOG | TASK-P6-AUDIT-001       | Implement audit inspection                                 |
-| TASK-P6-AUDIT-003       | P6    | TESTING        | HIGH     | BACKLOG | TASK-P6-AUDIT-002       | Verify audit integrity                                     |
-| TASK-P7-AI-001          | P7    | AI             | CRITICAL | BACKLOG | P3-P6 complete          | Establish AI provider abstraction                          |
-| TASK-P7-AI-002          | P7    | AI             | HIGH     | BACKLOG | TASK-P7-AI-001          | Implement AI context builder                               |
-| TASK-P7-AI-003          | P7    | AI             | HIGH     | BACKLOG | TASK-P7-AI-002          | Implement validated AI output handling                     |
+| TASK-P5-MOD-001         | P5    | MODERATION     | CRITICAL | DONE    | P3 complete             | Implement TriageCase workflow                              |
+| TASK-P5-MOD-002         | P5    | MODERATION     | CRITICAL | DONE    | TASK-P5-MOD-001         | Implement human Resolution workflow                        |
+| TASK-P5-MOD-003         | P5    | UI             | HIGH     | DONE    | TASK-P5-MOD-002         | Implement moderator review experience                      |
+| TASK-P5-MOD-004         | P5    | TESTING        | HIGH     | DONE    | TASK-P5-MOD-002         | Verify moderation lifecycle                                |
+| TASK-P6-AUDIT-001       | P6    | AUDIT          | CRITICAL | DONE    | P5 complete             | Implement immutable audit event recording                  |
+| TASK-P6-AUDIT-002       | P6    | AUDIT          | HIGH     | DONE    | TASK-P6-AUDIT-001       | Implement audit inspection                                 |
+| TASK-P6-AUDIT-003       | P6    | TESTING        | HIGH     | DONE    | TASK-P6-AUDIT-002       | Verify audit integrity                                     |
+| TASK-P7-AI-001          | P7    | AI             | CRITICAL | DONE    | P3-P6 complete          | Establish AI provider abstraction                          |
+| TASK-P7-AI-002          | P7    | AI             | HIGH     | DONE    | TASK-P7-AI-001          | Implement AI context builder                               |
+| TASK-P7-AI-003          | P7    | AI             | HIGH     | DONE    | TASK-P7-AI-002          | Verify AI boundary & advisory behavior                     |
 | TASK-P7-AI-004          | P7    | AI             | HIGH     | BACKLOG | TASK-P7-AI-003          | Implement deterministic fallback behavior                  |
 | TASK-P7-AI-005          | P7    | TESTING        | CRITICAL | BACKLOG | TASK-P7-AI-004          | Verify AI authority boundaries                             |
-| TASK-P8-ANALYTICS-001   | P8    | ANALYTICS      | HIGH     | BACKLOG | P6 complete             | Implement quality analytics                                |
-| TASK-P8-ANALYTICS-002   | P8    | ANALYTICS      | HIGH     | BACKLOG | TASK-P8-ANALYTICS-001   | Implement QualityPulse                                     |
-| TASK-P8-ANALYTICS-003   | P8    | UI             | HIGH     | BACKLOG | TASK-P8-ANALYTICS-002   | Implement analytics presentation                           |
-| TASK-P9-INTEGRATION-001 | P9    | INTEGRATION    | CRITICAL | BACKLOG | P2-P8 complete          | Establish OSM integration boundary                         |
-| TASK-P9-INTEGRATION-002 | P9    | INTEGRATION    | HIGH     | BACKLOG | TASK-P9-INTEGRATION-001 | Implement synthetic OSM adapter                            |
-| TASK-P9-INTEGRATION-003 | P9    | INTEGRATION    | HIGH     | BACKLOG | TASK-P9-INTEGRATION-002 | Verify integration contract                                |
-| TASK-P10-HARDEN-001     | P10   | SECURITY       | CRITICAL | BACKLOG | P9 complete             | Harden authorization and validation                        |
-| TASK-P10-HARDEN-002     | P10   | SECURITY       | CRITICAL | BACKLOG | TASK-P10-HARDEN-001     | Verify consequential action boundaries                     |
-| TASK-P10-HARDEN-003     | P10   | TESTING        | CRITICAL | BACKLOG | TASK-P10-HARDEN-002     | Execute full regression suite                              |
-| TASK-P10-HARDEN-004     | P10   | PERFORMANCE    | HIGH     | BACKLOG | TASK-P10-HARDEN-003     | Verify MVP performance and reliability                     |
-| TASK-P11-DEMO-001       | P11   | DEMO           | CRITICAL | BACKLOG | P10 complete            | Build deterministic end-to-end demo scenario               |
-| TASK-P11-DEMO-002       | P11   | DEMO           | CRITICAL | BACKLOG | TASK-P11-DEMO-001       | Implement demo reset and recovery                          |
-| TASK-P11-DEMO-003       | P11   | DEMO           | CRITICAL | BACKLOG | TASK-P11-DEMO-002       | Execute full demo verification                             |
-| TASK-P11-DEMO-004       | P11   | DOCUMENTATION  | HIGH     | BACKLOG | TASK-P11-DEMO-003       | Finalize hackathon-facing documentation                    |
+| TASK-P8-ANALYTICS-001   | P8    | ANALYTICS      | HIGH     | DONE    | P6 complete             | Implement quality analytics                                |
+| TASK-P8-ANALYTICS-002   | P8    | ANALYTICS      | HIGH     | DONE    | TASK-P8-ANALYTICS-001   | Implement QualityPulse                                     |
+| TASK-P8-ANALYTICS-003   | P8    | UI             | HIGH     | DONE    | TASK-P8-ANALYTICS-002   | Implement analytics presentation                           |
+| TASK-P9-INTEGRATION-001 | P9    | INTEGRATION    | CRITICAL | DONE    | P2-P8 complete          | Establish OSM integration boundary                         |
+| TASK-P9-INTEGRATION-002 | P9    | INTEGRATION    | HIGH     | DONE    | TASK-P9-INTEGRATION-001 | Implement synthetic OSM adapter                            |
+| TASK-P9-INTEGRATION-003 | P9    | INTEGRATION    | HIGH     | DONE    | TASK-P9-INTEGRATION-002 | Verify integration contract                                |
+| TASK-P10-HARDEN-001     | P10   | SECURITY       | CRITICAL | DONE    | P9 complete             | Harden authorization and validation                        |
+| TASK-P10-HARDEN-002     | P10   | SECURITY       | CRITICAL | DONE    | TASK-P10-HARDEN-001     | Verify consequential action boundaries                     |
+| TASK-P10-HARDEN-003     | P10   | TESTING        | CRITICAL | DONE    | TASK-P10-HARDEN-002     | Execute full regression suite                              |
+| TASK-P10-HARDEN-004     | P10   | PERFORMANCE    | HIGH     | DONE    | TASK-P10-HARDEN-003     | Verify MVP performance and reliability                     |
+| TASK-P11-DEMO-001       | P11   | DEMO           | CRITICAL | DONE    | P10 complete            | Build deterministic end-to-end demo scenario               |
+| TASK-P11-DEMO-002       | P11   | DEMO           | CRITICAL | DONE    | TASK-P11-DEMO-001       | Implement demo reset and recovery                          |
+| TASK-P11-DEMO-003       | P11   | DEMO           | CRITICAL | DONE    | TASK-P11-DEMO-002       | Execute full demo verification                             |
+| TASK-P11-DEMO-004       | P11   | DOCUMENTATION  | HIGH     | DONE    | TASK-P11-DEMO-003       | Finalize hackathon-facing documentation                    |
 
 > The task IDs above establish the initial execution structure. Detailed implementation tasks may be decomposed from these tasks as required.
 
@@ -1166,31 +1166,31 @@ This section records the current execution pointer.
 
 ```text
 Current Phase:
-P4 — Quality Signal Pipeline / Intelligence (Phase 4 Tasks Complete)
+P11 — Demo (Complete)
 
 Current Task:
-TASK-P4-INTEL-003 (Verify detector behavior)
+TASK-P11-DEMO-004 (Finalize hackathon-facing documentation)
 
 Current Task Status:
-DONE (Verified: 153/153 passed tests across 11 suites, +13 new tests in detector-behavior.test.ts, typecheck: 0 errors, web build: PASS, git diff --check: PASS)
+DONE (Verified: 592/592 passed tests across 31 suites, typecheck: 0 errors across monorepo workspaces, web build: PASS in 737ms, git diff --check: PASS. Created master Hackathon Demo Guide docs/demo/HACKATHON-DEMO-GUIDE.md covering 12-step scenario, canonical personas, AI non-authority boundary specs, QualityPulse z-score anomaly detection, TrustLens immutable audit trail, reset/recovery lifecycle, 10-scene presentation script, judge FAQ, implemented vs future scope, and honest limitations. Updated root README.md and documentation architecture.)
 
 Next Ready Task:
-TASK-P5-MOD-001 (or TASK-P2-EVAL-003)
+NONE — All MVP roadmap phases (P0 through P11) are COMPLETE. Repository is under HACKATHON FREEZE.
 
 Vertical Slice:
-IN PROGRESS (Completeness validation, QualitySignal generation, EvaluatorMeanDeviationDetector, StatisticalDetectionEngine & behavioral verification complete)
+COMPLETE (Full vertical slice verified: CreateEvaluation -> Validation -> QualitySignal -> TriageCase -> Human Review/EscalationHub -> Resolution -> Immutable AuditEvent -> Live HTTP Inspection API)
 
 AI Layer:
-NOT STARTED
+COMPLETE / VERIFIED (Boundary, context builder, mock provider, schema validation, fallback degradation, and advisory behavior 100% verified with non-authority invariants strictly enforced)
 
 Integration:
-NOT STARTED
+COMPLETE / VERIFIED (OSM boundary, synthetic adapter, replay idempotency, outbox event polling and dispatch lifecycle)
 
 Hardening:
-NOT STARTED
+COMPLETE / VERIFIED (Security hardening, server-side RBAC, consequential action boundaries, full regression suite, performance & reliability benchmarks)
 
 Demo:
-NOT STARTED
+COMPLETE / VERIFIED (Deterministic seeding, Evaluator Golden Path, QualityPulse anomaly detection, AI advisory non-authority, human moderation, TrustLens audit viewer, child-to-parent reset, non-demo isolation, transaction rollback, and hackathon documentation)
 ```
 
 This section must be updated as execution progresses.

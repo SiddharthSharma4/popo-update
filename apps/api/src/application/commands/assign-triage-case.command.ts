@@ -103,6 +103,22 @@ export class AssignTriageCaseHandler {
         },
       });
 
+      // 6. Record atomic AuditEvent
+      await scope.audit.record({
+        eventType: "TriageCaseAssigned",
+        actorType: command.actorType === "SYSTEM" ? "SYSTEM" : "USER",
+        actorId: command.actorId,
+        entityType: "TriageCase",
+        entityId: triageCase.id,
+        action: "ASSIGN_TRIAGE_CASE",
+        details: {
+          caseId: triageCase.id,
+          assigneeId: triageCase.assigneeId,
+          version: triageCase.version,
+          assignedAt: triageCase.updatedAt,
+        },
+      });
+
       return toTriageCaseDto(triageCase);
     });
   }

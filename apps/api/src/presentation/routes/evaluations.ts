@@ -11,10 +11,12 @@ import {
   AssignMarkRequestSchema,
   SubmitEvaluationRequestSchema,
   ListEvaluationsQuerySchema,
+  UserRole,
+  ActorType,
 } from "@osm/shared";
 import type { EvaluationApplicationService } from "../../application/services/evaluation.service.js";
 import type { EvaluationDto } from "../../application/dtos/evaluation.dto.js";
-import { InvalidCommandError } from "../../application/common/errors.js";
+import { InvalidCommandError, UnauthorizedActionError } from "../../application/common/errors.js";
 import { ConcurrencyConflictError } from "../../domain/errors.js";
 
 export const evaluationRoutes = (
@@ -29,6 +31,15 @@ export const evaluationRoutes = (
     fastify.get<{ Querystring: Record<string, unknown> }>(
       "/",
       async (request, reply) => {
+        const actorType = (request.headers["x-actor-type"] as string)?.toUpperCase();
+        const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "LIST_EVALUATIONS",
+            "AI actors are not authorized to access evaluation lists."
+          );
+        }
+
         const parsed = ListEvaluationsQuerySchema.safeParse(request.query);
         if (!parsed.success) {
           throw parsed.error;
@@ -44,12 +55,50 @@ export const evaluationRoutes = (
      * Conforms to 06-api-contract.md §21.3.
      */
     fastify.post("/", async (request, reply) => {
+      const actorType = (
+        (request.headers["x-actor-type"] as string) ||
+        (request.body as Record<string, unknown> | null)?.actorType ||
+        ActorType.USER
+      ).toString().toUpperCase();
+      const rawUserRole =
+        (request.headers["x-user-role"] as string) ||
+        (request.body as Record<string, unknown> | null)?.userRole;
+      const userRole = (rawUserRole || UserRole.ADMIN).toString().toUpperCase();
+
+      if (actorType === ActorType.AI || userRole === "AI") {
+        throw new UnauthorizedActionError(
+          "CREATE_EVALUATION",
+          "AI actors are strictly prohibited from creating authoritative evaluations."
+        );
+      }
+
+      if (
+        userRole !== UserRole.EXAMINER &&
+        userRole !== UserRole.MODERATOR &&
+        userRole !== UserRole.ADMIN
+      ) {
+        throw new UnauthorizedActionError(
+          "CREATE_EVALUATION",
+          `User role '${userRole}' is not authorized to create evaluations.`
+        );
+      }
+      const actorId =
+        (request.headers["x-actor-id"] as string)?.trim() ||
+        (request.headers["x-user-id"] as string)?.trim() ||
+        (request.headers["x-evaluator-id"] as string)?.trim();
 
       const parsed = CreateEvaluationRequestSchema.safeParse(request.body);
       if (!parsed.success) {
         throw parsed.error;
       }
       const data = parsed.data;
+
+      if (userRole === UserRole.EXAMINER && actorId && data.evaluatorId !== actorId) {
+        throw new UnauthorizedActionError(
+          "CREATE_EVALUATION",
+          `Examiner '${actorId}' cannot create evaluation assigned to '${data.evaluatorId}'.`
+        );
+      }
 
       const evaluationId = data.id?.trim() || `eval_${randomUUID()}`;
 
@@ -70,6 +119,9 @@ export const evaluationRoutes = (
         rubricId: data.rubricId,
         rubricVersion: data.rubricVersion,
         questions,
+        actorType,
+        actorId,
+        userRole,
       });
 
       return reply.code(201).send(evaluation);
@@ -84,7 +136,23 @@ export const evaluationRoutes = (
       "/:evaluationId",
       async (request, reply) => {
         const { evaluationId } = request.params;
-        const evaluation = await evaluationService.getEvaluationById(evaluationId);
+        if (!evaluationId || evaluationId.trim() === "") {
+          throw new InvalidCommandError(
+            "GetEvaluation",
+            "Evaluation ID cannot be empty or whitespace."
+          );
+        }
+
+        const actorType = (request.headers["x-actor-type"] as string)?.toUpperCase();
+        const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "GET_EVALUATION",
+            "AI actors are not authorized to inspect evaluation details."
+          );
+        }
+
+        const evaluation = await evaluationService.getEvaluationById(evaluationId.trim());
         return reply.code(200).send(evaluation);
       }
     );
@@ -98,6 +166,12 @@ export const evaluationRoutes = (
       "/:evaluationId",
       async (request, reply) => {
         const { evaluationId } = request.params;
+        if (!evaluationId || evaluationId.trim() === "") {
+          throw new InvalidCommandError(
+            "AssignMark",
+            "Evaluation ID cannot be empty or whitespace."
+          );
+        }
 
         const parsed = AssignMarkRequestSchema.safeParse(request.body);
         if (!parsed.success) {
@@ -115,8 +189,20 @@ export const evaluationRoutes = (
         const actorType = (
           data.actorType ||
           (request.headers["x-actor-type"] as string) ||
-          "USER"
-        ) as "USER" | "AI" | "SYSTEM";
+          ActorType.USER
+        ).toString().toUpperCase() as "USER" | "AI" | "SYSTEM";
+
+        const userRole = (
+          (request.headers["x-user-role"] as string) ||
+          UserRole.EXAMINER
+        ).toUpperCase();
+
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "ASSIGN_MARK",
+            "AI cannot assign authoritative marks. Academic evaluation requires authorized human attribution."
+          );
+        }
 
         if (!evaluatorId) {
           throw new InvalidCommandError(
@@ -125,13 +211,24 @@ export const evaluationRoutes = (
           );
         }
 
+        // Enforce resource ownership: examiners may only mark their own assigned evaluation
+        if (userRole === UserRole.EXAMINER) {
+          const current = await evaluationService.getEvaluationById(evaluationId.trim());
+          if (current.evaluatorId !== evaluatorId) {
+            throw new UnauthorizedActionError(
+              "ASSIGN_MARK",
+              `Only the assigned evaluator (${current.evaluatorId}) may assign marks to evaluation ${evaluationId}.`
+            );
+          }
+        }
+
         // Check optimistic concurrency if expectedVersion provided in body
         if (data.expectedVersion !== undefined) {
-          const current = await evaluationService.getEvaluationById(evaluationId);
+          const current = await evaluationService.getEvaluationById(evaluationId.trim());
           if (current.version !== data.expectedVersion) {
             throw new ConcurrencyConflictError(
               "Evaluation",
-              evaluationId,
+              evaluationId.trim(),
               data.expectedVersion,
               current.version
             );
@@ -143,11 +240,11 @@ export const evaluationRoutes = (
         if (ifMatch) {
           const expectedHeaderVersion = parseInt(ifMatch.replace(/["']/g, ""), 10);
           if (!isNaN(expectedHeaderVersion)) {
-            const current = await evaluationService.getEvaluationById(evaluationId);
+            const current = await evaluationService.getEvaluationById(evaluationId.trim());
             if (current.version !== expectedHeaderVersion) {
               throw new ConcurrencyConflictError(
                 "Evaluation",
-                evaluationId,
+                evaluationId.trim(),
                 expectedHeaderVersion,
                 current.version
               );
@@ -169,11 +266,12 @@ export const evaluationRoutes = (
               );
             }
             latestDto = await evaluationService.assignMark({
-              evaluationId,
+              evaluationId: evaluationId.trim(),
               questionId: item.questionId,
               awardedMarks: awarded,
               evaluatorId,
               actorType,
+              userRole,
               comments: item.comments,
               isAnnotated: item.isAnnotated,
             });
@@ -189,11 +287,12 @@ export const evaluationRoutes = (
             );
           }
           updatedEvaluation = await evaluationService.assignMark({
-            evaluationId,
+            evaluationId: evaluationId.trim(),
             questionId: data.questionId,
             awardedMarks: awarded,
             evaluatorId,
             actorType,
+            userRole,
             comments: data.comments,
             isAnnotated: data.isAnnotated,
           });
@@ -217,6 +316,12 @@ export const evaluationRoutes = (
       "/:evaluationId/submit",
       async (request, reply) => {
         const { evaluationId } = request.params;
+        if (!evaluationId || evaluationId.trim() === "") {
+          throw new InvalidCommandError(
+            "SubmitEvaluation",
+            "Evaluation ID cannot be empty or whitespace."
+          );
+        }
 
         const parsed = SubmitEvaluationRequestSchema.safeParse(request.body ?? {});
         if (!parsed.success) {
@@ -234,8 +339,17 @@ export const evaluationRoutes = (
         const actorType = (
           data.actorType ||
           (request.headers["x-actor-type"] as string) ||
-          "USER"
-        ) as "USER" | "AI" | "SYSTEM";
+          ActorType.USER
+        ).toString().toUpperCase() as "USER" | "AI" | "SYSTEM";
+
+        const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "SUBMIT_EVALUATION",
+            "AI cannot finalize or submit examination evaluations."
+          );
+        }
 
         if (!evaluatorId) {
           throw new InvalidCommandError(
@@ -245,9 +359,10 @@ export const evaluationRoutes = (
         }
 
         const submittedEvaluation = await evaluationService.submitEvaluation({
-          evaluationId,
+          evaluationId: evaluationId.trim(),
           evaluatorId,
           actorType,
+          userRole,
         });
 
         return reply.code(200).send(submittedEvaluation);
@@ -263,8 +378,54 @@ export const evaluationRoutes = (
       "/:evaluationId/quality-signals",
       async (request, reply) => {
         const { evaluationId } = request.params;
-        const signals = await evaluationService.getQualitySignals(evaluationId);
+        if (!evaluationId || evaluationId.trim() === "") {
+          throw new InvalidCommandError(
+            "GetQualitySignals",
+            "Evaluation ID cannot be empty or whitespace."
+          );
+        }
+
+        const actorType = (request.headers["x-actor-type"] as string)?.toUpperCase();
+        const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "GET_QUALITY_SIGNALS",
+            "AI actors are not authorized to inspect quality signals."
+          );
+        }
+
+        const signals = await evaluationService.getQualitySignals(evaluationId.trim());
         return reply.code(200).send(signals);
+      }
+    );
+
+    /**
+     * GET /api/v1/evaluations/:evaluationId/completeness
+     * Runs deterministic completeness validation (CompleteCheck).
+     * Conforms to 01-product-contract.md §13 and 02-architecture-contract.md §14.
+     */
+    fastify.get<{ Params: { evaluationId: string } }>(
+      "/:evaluationId/completeness",
+      async (request, reply) => {
+        const { evaluationId } = request.params;
+        if (!evaluationId || evaluationId.trim() === "") {
+          throw new InvalidCommandError(
+            "RunCompletenessCheck",
+            "Evaluation ID cannot be empty or whitespace."
+          );
+        }
+
+        const actorType = (request.headers["x-actor-type"] as string)?.toUpperCase();
+        const userRole = (request.headers["x-user-role"] as string)?.toUpperCase();
+        if (actorType === ActorType.AI || userRole === "AI") {
+          throw new UnauthorizedActionError(
+            "RUN_COMPLETENESS_CHECK",
+            "AI actors cannot invoke validation checks."
+          );
+        }
+
+        const result = await evaluationService.runCompletenessCheck(evaluationId.trim());
+        return reply.code(200).send(result);
       }
     );
   };

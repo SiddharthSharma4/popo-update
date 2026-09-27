@@ -707,15 +707,19 @@ describe("TASK-P5-MOD-001: TriageCase Aggregate, Repository, Commands, and Workf
       expect(staleRes.json().error).toBe("ConcurrencyConflictError");
     });
 
-    it("verifies P5-MOD-002 resolve endpoint is NOT implemented (hard boundary)", async () => {
+    it("verifies P5-MOD-002 resolve endpoint is now active and returns 404 for unknown case", async () => {
       const res = await server.inject({
         method: "POST",
-        url: "/api/v1/triage-cases/case_123/resolve",
-        payload: { outcome: "DISMISSED" },
+        url: "/api/v1/triage-cases/case_nonexistent_123/resolve",
+        headers: { "x-user-role": "MODERATOR" },
+        payload: {
+          outcome: "DISMISSED",
+          reason: "Dismissing non-existent case",
+        },
       });
 
-      // Fastify 404 Route Not Found
       expect(res.statusCode).toBe(404);
+      expect(res.json().error).toBe("EntityNotFoundError");
     });
   });
 });

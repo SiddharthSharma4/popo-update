@@ -5,3 +5,5 @@
 
 export * from "./triage-case.js";
 export * from "./triage-case-repository.js";
+export * from "./resolution.js";
+export * from "./resolution-repository.js";
