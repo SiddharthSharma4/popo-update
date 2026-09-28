@@ -631,6 +631,9 @@ describe("TASK-P10-HARDEN-001 — Security, Authorization & Validation Hardening
       const res = await app.inject({
         method: "GET",
         url: "/api/v1/audit-events/%20",
+        headers: {
+          "x-user-role": UserRole.MODERATOR,
+        },
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toBe("InvalidCommandError");

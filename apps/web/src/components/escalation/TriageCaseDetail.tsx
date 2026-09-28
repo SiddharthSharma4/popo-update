@@ -181,12 +181,56 @@ export const TriageCaseDetail: React.FC<TriageCaseDetailProps> = ({
         </div>
       )}
 
+      {/* Moderation Investigation Context Dossier */}
+      <div className="osm-investigation-dossier" id="osm-investigation-dossier">
+        <div className="osm-dossier-card">
+          <span className="osm-dossier-label">Affected Examination Script</span>
+          <strong className="osm-dossier-val">{scriptInfo.displayRef}</strong>
+          <span className="osm-dossier-sub">{scriptInfo.candidateLabel}</span>
+          <Link
+            to={`/examiner/evaluate/${triageCase.evaluationId}`}
+            className="osm-case-script-link"
+            style={{ marginTop: "0.25rem", display: "inline-block" }}
+          >
+            Inspect Script in Workspace →
+          </Link>
+        </div>
+
+        <div className="osm-dossier-card">
+          <span className="osm-dossier-label">Evaluator Under Review</span>
+          <strong className="osm-dossier-val">
+            {evidence?.evaluatorId ? getActorDisplayName(String(evidence.evaluatorId)) : "Dr. Adrian Foster"}
+          </strong>
+          <span className="osm-dossier-sub">
+            Role: Examiner ({String(evidence?.evaluatorId || "evaluator_lenient")})
+          </span>
+        </div>
+
+        <div className="osm-dossier-card">
+          <span className="osm-dossier-label">Triggered Detection Signal</span>
+          <strong className="osm-dossier-val" style={{ color: "var(--osm-warning-dark)" }}>
+            {signal ? signal.signalType : "ANOMALOUS_LENIENT"}
+          </strong>
+          <span className="osm-dossier-sub">
+            {signal ? `Severity: ${signal.severity}` : "High Severity Outlier"}
+          </span>
+        </div>
+
+        <div className="osm-dossier-card">
+          <span className="osm-dossier-label">Investigation Authority</span>
+          <strong className="osm-dossier-val" style={{ color: "var(--osm-primary)" }}>
+            Human Decision Required
+          </strong>
+          <span className="osm-dossier-sub">AI Advisory only • Cannot finalize</span>
+        </div>
+      </div>
+
       {/* ====================================================================
-          STRUCTURED EVIDENCE CARD (Replaces raw JSON dumps)
+          STAGE 1: STRUCTURED EVIDENCE CARD (Analytical Signal)
           ==================================================================== */}
       <div className="osm-evidence-section" id="detail-quality-signal-section">
         <h3 className="osm-evidence-section-title">
-          <span>⚡ Quality Signal Evidence</span>
+          <span><span className="osm-stage-badge">STAGE 1</span>⚡ Analytical Quality Signal & Evidence</span>
           {signal && <StatusBadge status={signal.severity} size="sm" showDot={false} />}
         </h3>
 
@@ -275,13 +319,13 @@ export const TriageCaseDetail: React.FC<TriageCaseDetailProps> = ({
       </div>
 
       {/* ====================================================================
-          DEDICATED AI ADVISORY CARD (Non-Authoritative)
+          STAGE 2: DEDICATED AI ADVISORY CARD (Non-Authoritative)
           ==================================================================== */}
       <div className="osm-ai-advisory-container" id="detail-ai-advisory-section">
         <div className="osm-ai-advisory-header-row">
           <h3 className="osm-ai-advisory-title">
-            <span>🤖 AI Advisory Synthesis</span>
-            <span className="osm-ai-advisory-badge">NON-AUTHORITATIVE ADVISORY</span>
+            <span><span className="osm-stage-badge">STAGE 2</span>🤖 Non-Authoritative AI Advisory</span>
+            <span className="osm-ai-advisory-badge">ADVISORY ONLY — NOT A VERDICT</span>
           </h3>
         </div>
 
@@ -347,10 +391,12 @@ export const TriageCaseDetail: React.FC<TriageCaseDetailProps> = ({
       </div>
 
       {/* ====================================================================
-          AUTHORITATIVE HUMAN RESOLUTION SECTION
+          STAGE 3: AUTHORITATIVE HUMAN RESOLUTION SECTION
           ==================================================================== */}
       <div className="osm-resolution-container" id="detail-resolution-section">
-        <h3 className="osm-resolution-title">⚖️ Authoritative Human Resolution</h3>
+        <h3 className="osm-resolution-title">
+          <span><span className="osm-stage-badge">STAGE 3</span>⚖️ Authoritative Human Resolution</span>
+        </h3>
 
         {isResolved ? (
           /* Resolution Receipt (Locked) */
@@ -403,7 +449,7 @@ export const TriageCaseDetail: React.FC<TriageCaseDetailProps> = ({
           /* Pending Resolution Action Boundary */
           <div className="osm-resolution-pending-box">
             <p className="osm-resolution-pending-text">
-              This triage case requires an authorized human decision. Automated AI or statistical detectors cannot resolve moderation cases.
+              This triage case requires an authorized human decision. Automated statistical signals and AI advisors provide observational evidence, but cannot resolve moderation cases or mutate examination marks.
             </p>
 
             {isExaminer ? (

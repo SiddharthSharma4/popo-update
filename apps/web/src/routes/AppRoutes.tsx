@@ -19,9 +19,10 @@ export interface AppRoutesProps {
   auth: AuthContext;
   health: HealthResponse | null;
   healthError: string | null;
+  onAuthChange?: (newAuth: AuthContext) => void;
 }
 
-export const AppRoutes: React.FC<AppRoutesProps> = ({ auth, health, healthError }) => {
+export const AppRoutes: React.FC<AppRoutesProps> = ({ auth, health, healthError, onAuthChange }) => {
   return (
     <Routes>
       {/* Root redirect to current role landing page */}
@@ -31,10 +32,23 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ auth, health, healthError 
       />
 
       {/* ====================================================================
-          EXAMINER ROUTES (Guarded to EXAMINER role)
+          EXAMINER QUEUE (Guarded strictly to EXAMINER role)
           ==================================================================== */}
       <Route element={<RoleGuard auth={auth} allowedRoles={[UserRole.EXAMINER]} />}>
         <Route path={ROUTES.EXAMINER_QUEUE} element={<ExaminerQueue auth={auth} />} />
+      </Route>
+
+      {/* ====================================================================
+          EVALUATION WORKSPACE (Examiners can mark; Moderators/Admins inspect read-only)
+          ==================================================================== */}
+      <Route
+        element={
+          <RoleGuard
+            auth={auth}
+            allowedRoles={[UserRole.EXAMINER, UserRole.MODERATOR, UserRole.ADMIN]}
+          />
+        }
+      >
         <Route
           path={ROUTES.EXAMINER_EVALUATE}
           element={<EvaluationWorkspace auth={auth} />}
@@ -74,7 +88,7 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ auth, health, healthError 
       <Route element={<RoleGuard auth={auth} allowedRoles={[UserRole.ADMIN]} />}>
         <Route
           path={ROUTES.ADMIN_OVERVIEW}
-          element={<AdminOverviewPage health={health} healthError={healthError} />}
+          element={<AdminOverviewPage health={health} healthError={healthError} auth={auth} />}
         />
         <Route
           path={ROUTES.ADMIN_ANALYTICS}
@@ -82,7 +96,10 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ auth, health, healthError 
         />
         <Route path={ROUTES.ADMIN_AUDIT} element={<TrustLensView auth={auth} />} />
         <Route path={ROUTES.ADMIN_TRIAGE} element={<EscalationHub auth={auth} />} />
-        <Route path={ROUTES.ADMIN_DEMO} element={<AdminDemoPage auth={auth} />} />
+        <Route
+          path={ROUTES.ADMIN_DEMO}
+          element={<AdminDemoPage auth={auth} onAuthChange={onAuthChange} />}
+        />
       </Route>
 
       {/* Catch-all route: redirect unknown paths to role default */}

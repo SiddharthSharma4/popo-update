@@ -62,6 +62,14 @@ export class SubmitEvaluationHandler {
         throw new EntityNotFoundError("Evaluation", command.evaluationId);
       }
 
+      // Enforce role authorization: only examiners can submit evaluations
+      if (command.userRole && command.userRole !== "EXAMINER") {
+        throw new UnauthorizedActionError(
+          "SUBMIT_EVALUATION",
+          `Role '${command.userRole}' is not authorized to submit evaluations. Only the assigned examiner may submit.`
+        );
+      }
+
       // Check assignment authorization
       if (evaluation.evaluatorId !== command.evaluatorId) {
         throw new UnauthorizedActionError(

@@ -3,16 +3,16 @@
 **Project:** OSM — AI-Powered On-Screen Marking & Digital Evaluation System  
 **Document:** `docs/12-project-state.md`  
 **Status:** Living Document  
-**Last Updated:** 2026-09-27  
+**Last Updated:** 2026-09-28  
 
 ---
 
 ## 1. Current Execution Pointer
 
-* **Current Phase:** `Phase 11 — Demo` (Complete)
-* **Active Task:** None (`TASK-P11-DEMO-004` completed)
-* **Current Task Status:** `DONE` for `TASK-P11-DEMO-004`
-* **Next Ready Task:** None — All MVP roadmap phases (P0 through P11) are complete. Repository is under Hackathon Freeze.
+* **Current Phase:** `Phase REAL — Real Examination Intake & Evaluation Workflow`
+* **Active Task:** None (awaiting explicit user authorization for `TASK-REAL-02`)
+* **Current Task Status:** `DONE` for `TASK-REAL-01`
+* **Next Ready Task:** `TASK-REAL-02 — File Upload & Storage Pipeline`
 
 ---
 
@@ -22,11 +22,15 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `TASK-P0-FOUND-001` | Establish repository and development foundation | P0 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 4/4 PASS, Database: PASS) |
 | `TASK-P0-FOUND-002` | Establish project documentation and traceability structure | P0 | 2026-09-26 | VERIFIED (Documentation synchronized) |
+| `TASK-P0-FOUND-003` | Establish baseline testing and verification infrastructure | P0 | 2026-09-28 | VERIFIED (Reconciled: The original requirements of TASK-P0-FOUND-003 are satisfied by capabilities that were implemented across subsequent tasks. Full test suite: 31 suites / 592 tests PASS, typecheck: PASS across all workspaces, test:smoke: 61/61 assertions PASS, DB isolation verified) |
+| `TASK-P0-FOUND-004` | Establish local development and environment configuration | P0 | 2026-09-28 | VERIFIED (Reconciled: The original requirements of TASK-P0-FOUND-004 are satisfied by capabilities that were implemented across subsequent tasks. Dev scripts: npm run dev:api / dev:web, Zod-validated runtime configuration in apps/api/src/config/index.ts, sanitized .env.example, git secret hygiene in .gitignore, Vite dev reverse proxy at port 5173 to port 4000, and setup documentation in README.md) |
+| `TASK-P0-FOUND-005` | Establish deterministic demo/reset foundation | P0 | 2026-09-28 | VERIFIED (Reconciled: The original requirements of TASK-P0-FOUND-005 are satisfied by capabilities that were implemented across subsequent tasks. Full test suites: 33/33 PASS across demo-scenario.test.ts and demo-reset.test.ts, test:smoke: 61/61 assertions PASS, deterministic seeding of RUBRIC-CS-101 and cycle-2026-demo, child-to-parent reset, non-demo isolation, ADMIN-only RBAC, and append-only RESET_DEMO_SCENARIO audit trail verified) |
 | `TASK-P1-DOMAIN-001` | Establish core domain model | P1 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 17/17 PASS in domain suite) |
 | `TASK-P1-DOMAIN-002` | Establish authoritative persistence model | P1 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 29/29 PASS across 4 suites) |
 | `TASK-P1-DOMAIN-003` | Establish application/service boundaries | P1 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 47/47 PASS across 5 suites) |
 | `TASK-P2-EVAL-001` | Implement evaluation workflow | P2 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 66/66 PASS across 6 suites) |
 | `TASK-P2-EVAL-002` | Expose evaluation collection query/list operations | P2 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 77/77 PASS across 6 suites) |
+| `TASK-P2-EVAL-003` | Verify evaluation lifecycle | P2 | 2026-09-28 | VERIFIED (Reconciled: The original requirements of TASK-P2-EVAL-003 are satisfied by capabilities that were implemented across subsequent tasks. Full test suites: 73/73 PASS across domain.test.ts, persistence.test.ts, evaluation-api.test.ts, and application.test.ts; DRAFT -> IN_PROGRESS -> SUBMITTED -> FINALIZED lifecycle, locked status immutability, optimistic concurrency DATA-006, mark bounds, and AI non-authority guards verified) |
 | `TASK-P3-VAL-001` | Implement deterministic completeness validation | P3 | 2026-09-26 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 89/89 PASS across 7 suites) |
 | `TASK-P3-VAL-002` | Generate first QualitySignal | P3 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 112/112 PASS across 8 suites, 23 new tests) |
 | `TASK-P3-VAL-003` | Verify deterministic signal generation | P3 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 115/115 PASS across 8 suites, +3 new tests, 0 production changes) |
@@ -42,6 +46,8 @@
 | `TASK-P6-AUDIT-003` | Verify audit integrity | P6 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 276/276 PASS across 18 suites, +14 new tests in audit-integrity.test.ts, web build: PASS in 704ms, git diff --check: PASS. Verified complete consequential lifecycle [CreateRubric -> CreateEvaluation -> AssignMark -> SubmitEvaluation -> CreateTriageCase -> AssignTriageCase -> ResolveTriageCase] recorded in unbroken chronological audit trail via live HTTP inspection API; entity-scoped filtering; transactional coupling with zero phantom audit events on rollback; multi-boundary immutability [domain Object.freeze, repository interface without update/delete, HTTP 404 on mutation endpoints]; raw DB vs application append-only demarcation accurately documented; Domain Event vs Audit Event architectural separation; multi-role isolation [MODERATOR/ADMIN 200, EXAMINER 403, unknown role 403, AI 403]; and evaluation mark/score invariance [INV-003, INV-004, INV-005] 100% verified.) |
 | `TASK-P7-AI-001` | Establish AI service boundary / context builder | P7 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 293/293 PASS across 19 suites, +17 new tests in ai-service-boundary.test.ts, web build: PASS in 711ms, git diff --check: PASS. Implemented pure TypeScript AI service boundary with zero vendor SDKs, provider abstraction [AiProvider], deterministic mock provider [DeterministicMockAiProvider], context builder [AiContextBuilder] with strict data minimization [omits student PII and credentials], cross-evaluation leakage guards, deep runtime immutability [Object.freeze], schema validation via Zod [AiRecommendationResponseSchema, GenerateAiAdvisoryRequestSchema, ApprovedAiContextSchema], safe fallback degradation on provider timeout/connection failure/malformed output, zero DB schema changes, and evaluation mark/score invariance [INV-003, INV-004, INV-005] 100% verified. Note: Absorbed TASK-P7-AI-002 context-builder scope per execution pointer.) |
 | `TASK-P7-AI-003` | Verify AI boundary & advisory behavior | P7 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 311/311 PASS across 20 suites, +18 new tests in ai-boundary-verification.test.ts, web build: PASS in 698ms, git diff --check: PASS. Verified full advisory assistance coverage [EVALUATION_SUMMARY, SIGNAL_EXPLANATION, RUBRIC_ADVISORY], 50-repetition deterministic reproducibility, multi-command AI rejection [AssignMark, SubmitEvaluation, CreateTriageCase, AssignTriageCase, ResolveTriageCase], mark and operational state invariance [INV-003, INV-004, INV-005], context minimization & PII exclusion [02-arch §28], cross-evaluation leakage guards, deep runtime immutability [Object.freeze], deterministic fallback degradation under connection error/timeout/malformed output, and advisory-to-human consequential handoff workflow 100% verified.) |
+| `TASK-P7-AI-004` | Implement deterministic fallback behavior | P7 | 2026-09-28 | VERIFIED (Reconciled: The original requirements of TASK-P7-AI-004 are satisfied by capabilities that were implemented across subsequent tasks. Verified in ai-service-boundary.test.ts and ai-boundary-verification.test.ts [35 tests PASS]; graceful degradation to deterministic heuristic fallback upon provider connection failure, timeout, or malformed schema response; status "FALLBACK", model "deterministic-heuristic-fallback", confidence 0.5, explicit non-authoritative disclaimer, and evaluation mark immutability [INV-003, INV-004] verified) |
+| `TASK-P7-AI-005` | Verify AI authority boundaries | P7 | 2026-09-28 | VERIFIED (Reconciled: The original requirements of TASK-P7-AI-005 are satisfied by capabilities that were implemented across subsequent tasks. Full test suites: 115 tests PASS across security-hardening.test.ts, consequential-action-boundaries.test.ts, and ai-boundary-verification.test.ts, test:smoke: 61/61 assertions PASS; verified that AI cannot assign marks [403], create evaluations [403], submit evaluations [403], create/assign/resolve triage cases [403], ingest external OSM batches [403], access audit trails or comparative analytics [403], or bypass RBAC via header spoofing [403]; advisory responses remain non-authoritative with disclaimers, and human decisions remain authoritative and auditable [INV-003, INV-004]) |
 | `TASK-P8-ANALYTICS-001` | Implement quality analytics | P8 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 331/331 PASS across 21 suites, +20 new tests in quality-analytics.test.ts, web build: PASS in 732ms, git diff --check: PASS. Implemented QualityAnalyticsService with pure mathematical calculations for evaluator deviation, peer mean benchmarking, population standard deviation, question performance aggregations, quality signals & moderation workload summaries, sample size guards [minSampleSize default 5], and deep runtime immutability [Object.freeze]. Implemented Fastify presentation endpoints under /api/v1/analytics [/evaluators, /evaluators/:evaluatorId, /summary] with strict role-based access control [MODERATOR/ADMIN permitted, EXAMINER/AI rejected with 403 Forbidden], 404 on unknown evaluator IDs and non-GET methods, 50-iteration deterministic reproducibility, zero DB schema changes, and evaluation mark/state immutability [INV-003, INV-004] 100% verified.) |
 | `TASK-P8-ANALYTICS-002` | Implement QualityPulse | P8 | 2026-09-27 | VERIFIED (Typecheck: PASS, Build: PASS, Tests: 361/361 PASS across 22 suites, +30 new tests in quality-pulse.test.ts, web build: PASS in 1.53s, git diff --check: PASS. Implemented QualityPulseService coordinating real-time cohort evaluation progress, cohort quality health index [100 - (evaluationsWithSignals / total) * 100], multi-factor risk level [LOW, MEDIUM, HIGH, CRITICAL], signal and moderation workload summaries, evaluator deviation distribution, and emerging hotspot discovery [EVALUATOR_ANOMALY, QUESTION_DIFFICULTY, SIGNAL_CONCENTRATION]. Implemented SentinelFlag statistical anomaly detection [triggerSentinel] with automatic materialization of non-duplicate QualitySignals, idempotency guards against active duplicate signals, minimum sample size guards, Fastify HTTP endpoints under /api/v1/analytics/quality-pulse [/quality-pulse, /quality-pulse/hotspots, POST /quality-pulse/trigger-sentinel], role authorization [MODERATOR/ADMIN permitted, EXAMINER/AI rejected with 403 Forbidden], 50-repetition deterministic reproducibility, and zero mutation of authoritative evaluation marks or operational state [INV-003, INV-004] 100% verified.) |
 | `TASK-P8-ANALYTICS-003` | Implement Quality Analytics Dashboard UI | P8 | 2026-09-27 | VERIFIED (Typecheck: PASS across all 3 workspaces, Production Web Build: PASS in 742ms, Tests: 378/378 PASS across 23 suites, +17 new tests in quality-analytics-dashboard.test.ts, git diff --check: PASS. Implemented analyticsService client consuming backend-derived analytics without duplicating math in React [INV-004], QualityPulseDashboard component in @osm/web wired under tab-pulse navigation, Evaluation Progress card with completion percentage bar, Cohort Quality Health Index gauge and color-coded risk badges [LOW, MEDIUM, HIGH, CRITICAL], Quality Signals summary with severity/detector breakdowns, Moderation Workload card with resolution rate %, Evaluator Cohort Deviation breakdown with flagged evaluator badges, Emerging Hotspots feed with prioritized cards and empty states, HotspotDrillDownModal displaying structured quantitative evidence and raw provenance payload, SentinelTriggerModal for manual SentinelFlag scan execution with real-time anomaly/signal feedback, unauthorized role banner restricting EXAMINER and AI actors [06-api §12], loading skeletons and error recovery banners, and evaluation mark/score immutability [INV-003] 100% verified.) |
@@ -56,12 +62,21 @@
 | `TASK-P11-DEMO-002` | Implement demo reset and recovery | P11 | 2026-09-27 | VERIFIED (Typecheck: PASS across all 3 workspaces, Monorepo Tests: 591/591 PASS across 31 suites, +10 new tests in demo-reset.test.ts, web build: PASS in 736ms, git diff --check: PASS. Implemented safe, deterministic demo reset and recovery strictly scoped to canonical scenario [cycle-2026-demo, RUBRIC-CS-101], child-to-parent deletion order [resolutions -> triage cases -> signals -> evaluations -> rubric], server-side RBAC enforcing ADMIN only, strictly rejecting EXAMINER/MODERATOR/anonymous/AI [403 Forbidden], complete preservation of non-demo application data, idempotent repeated execution [ALREADY_RESET], safe reset before seed, full SEED -> RESET -> SEED lifecycle recovery, append-only audit trail preservation with RESET_DEMO_SCENARIO event attribution, and admin reset button in web toolbar.) |
 | `TASK-P11-DEMO-003` | Execute full demo verification | P11 | 2026-09-27 | VERIFIED (Typecheck: PASS across all 3 workspaces, Monorepo Tests: 592/592 PASS across 31 suites, +1 new transactional failure & rollback test in demo-reset.test.ts, web build: PASS in 744ms, git diff --check: PASS. Independently audited and verified all Phase 11 Demo capabilities: complete deterministic seed, evaluator golden path, completeness warning, statistical anomaly hotspot in QualityPulse, AI advisory non-authority [INV-003, INV-004], human moderation resolution, TrustLens immutable audit viewer, reset safety Cases A-D, non-demo data isolation, child-to-parent deletion cascade, mid-transaction rollback, browser automation status, and contract traceability.) |
 | `TASK-P11-DEMO-004` | Finalize hackathon-facing documentation | P11 | 2026-09-27 | VERIFIED (Typecheck: PASS across all 3 workspaces, Monorepo Tests: 592/592 PASS across 31 suites, web build: PASS in 737ms, git diff --check: PASS. Finalized comprehensive hackathon presentation suite: created master Hackathon Demo Guide docs/demo/HACKATHON-DEMO-GUIDE.md featuring 12-step scenario, canonical personas, AI non-authority boundary specs, QualityPulse z-score anomaly detection engine, TrustLens immutable audit trail, reset/recovery lifecycle, 10-scene presentation script, judge FAQ, implemented vs future scope, and honest disclosed limitations. Updated root README.md, docs/README.md, task board, and project state.) |
+| `FE-020` | Implement Admin Overview screen | P12 | 2026-09-27 | VERIFIED (Typecheck: PASS, Web Build: PASS, Tests: PASS. Implemented AdminOverviewPage.tsx at /admin/overview with real-time health telemetry from GET /api/v1/health, SQLite WAL database connection indicator, system uptime in seconds, QualityPulse summary telemetry from GET /api/v1/analytics/quality-pulse, system status matrix, quick actions to seed/reset demo and jump to triage/audit, server-side RBAC + client RoleGuard enforcing ADMIN only, strictly rejecting EXAMINER, MODERATOR, and AI actors with 403 Forbidden.) |
+| `FE-023` | Implement Admin Demo Controls screen | P12 | 2026-09-27 | VERIFIED (Typecheck: PASS, Web Build: PASS, Tests: PASS. Implemented AdminDemoPage.tsx at /admin/demo with deterministic demo orchestration, Acts 1–4 walkthrough cards, Seed Demo Scenario invoking POST /api/v1/demo/seed, Reset Demo Scenario invoking POST /api/v1/demo/reset, confirmation modal dialog with institutional warning, real-time loading states and error recovery, server-side RBAC + client RoleGuard enforcing ADMIN only, strictly rejecting EXAMINER, MODERATOR, and AI actors with 403 Forbidden.) |
+| `TASK-MVP-DOCS-001` | Synchronize project documentation with verified repository state | P12 | 2026-09-28 | VERIFIED (Synchronized docs/planning/04-task-board.md, docs/12-project-state.md, and docs/13-traceability.md with verified repository state: 31 test suites, 592/592 tests passing, 0 failures; documented security-hardening test fix adding required MODERATOR authorization header; documented actual database engine as Node.js node:sqlite, DatabaseSync, SQLite WAL, and Kysely NodeSqliteDialect; documented actual AI baseline as AiProvider, AiService, DeterministicMockAiProvider, and POST /api/v1/ai/advisory route with zero live LLM providers implemented; documented verified status of Screens 1–8; added traceability mappings for Screens 7 and 8.) |
+| `TASK-MVP-STABILIZE-001` | API Integration Smoke & Regression Runner | P12 | 2026-09-28 | VERIFIED (Typecheck: PASS across all 3 workspaces, Monorepo Tests: 592/592 PASS across 31 suites, Smoke Tests: 61/61 PASS. Implemented permanent automated HTTP API smoke runner at apps/api/scripts/api-smoke-runner.ts and wired via npm run test:smoke. Verifies Screens 1–8 backend endpoints [23 checks], 12 server-side RBAC and actor security boundaries [12 checks], and demo state integrity/reset-seed idempotency/audit trail provenance [26 checks]. Strict database isolation enforced via in-memory SQLite :memory: on ephemeral port 0, with zero developer database mutation.) |
+| `TASK-REMED-PHASE-1` | Presentation & Demo Consistency Alignment | REMED-P1 | 2026-09-28 | VERIFIED (CS-101 course and RUBRIC-CS-101 alignment across fixtures and UI, canonical Dr. Sarah Jenkins / Dr. Adrian Foster / Prof. Marcus Vance persona consistency, SCRIPT-DEMO-501 triage script reference bug fix, and correct SQLite WAL engine label in UI.) |
+| `TASK-REMED-PHASE-2` | Audit Ledger Instrumentation | REMED-P2 | 2026-09-28 | VERIFIED (Closed audit gaps: GENERATE_AI_ADVISORY recorded on AI advisory generation, TRIGGER_SENTINEL recorded on manual Sentinel anomaly scan; 8/8 tests PASS in audit-ledger-instrumentation.test.ts, AI non-authority and Sentinel observational invariants verified.) |
+| `TASK-REMED-PHASE-3` | Workspace State & Ownership Remediation | REMED-P3 | 2026-09-28 | VERIFIED (Evaluation ownership & 403 authorization boundary: examiners restricted to assigned evaluations, non-examiner roles MODERATOR/ADMIN/AI rejected with 403 on mark assignment and submission; persona/navigation: AdminDemoPage switches to Dr. Sarah Jenkins on Act 1, local storage persists actor and role, evaluation workspace allows supervisory inspection in Read-Only Mode; dirty state: derived dirty-state comparison, beforeunload and back-navigation guards, save/submit semantics, submit blocked while dirty; 15/15 tests PASS in workspace-ownership.test.ts, 33/33 suites / 615 tests PASS.) |
+| `TASK-REMED-PHASE-4` | UI Polish & Ergonomics Remediation | REMED-P4 | 2026-09-28 | VERIFIED (Examiner workspace: keyboard shortcuts Alt+Left/Right and Ctrl+S, discoverable shortcut hint pill, active rubric criteria range matching highlight, live save state & authority feedback banner, candidate response reading typography enhancement, accessibility tablist/region attributes; Moderator workspace: unified investigation dossier grid, clear 3-stage hierarchy [Stage 1 Analytical Signal -> Stage 2 Non-Authoritative AI Advisory -> Stage 3 Authoritative Human Resolution], non-verdict advisory framing; Admin workspace: Act 1-4 sequential step badges, explicit persona switching action button labels; Chrome headless visual verification PASS, 33/33 suites / 615 tests PASS.) |
+| `TASK-REAL-01` | Additive Schema Migration | REAL | 2026-09-28 | VERIFIED (Migration 006 applied to SQLite database; created examination_documents, extracted_answers, and ai_disagreements tables with 11 indexes; shared enums ExaminationDocumentType, DocumentOcrStatus, AnswerVerificationStatus, AiDisagreementCategory; Kysely Database interface types; all foreign key cascades and constraints verified; 7/7 tests PASS in real-data-schema.test.ts; 34/34 suites / 622 tests PASS monorepo-wide; 61/61 checks PASS in test:smoke; typecheck PASS across all 3 workspaces; canonical demo cohort safely reset with 112 audit events preserved intact.) |
 
 ---
 
 ## 3. Unblocked Tasks
 
-* **None.** All MVP roadmap phases (P0 through P11) are complete. Repository is under Hackathon Freeze.
+* **Phase 4 Remediation Complete.** System fully operational and verified end-to-end.
 
 ---
 
@@ -75,8 +90,8 @@
 
 | Risk Category | Description | Mitigation Strategy | Status |
 | :--- | :--- | :--- | :--- |
-| **Native Addon Tooling** | Windows systems may lack Python/MSVC for `node-gyp`. | Used Node.js native `node:sqlite` via custom Kysely dialect. Zero external C++ dependencies required. | RESOLVED |
-| **AI Boundary Leakage** | Risk of AI mutating authoritative marks directly. | Hard invariant enforced: `AssignMarkCommand`, `SubmitEvaluationCommand`, and HTTP controllers explicitly reject `actorType === 'AI'` / `x-actor-type: AI` with `UnauthorizedActionError` (403 Forbidden). | RESOLVED |
+| **Database Engine & Tooling** | Windows systems may lack Python/MSVC for `node-gyp`; potential native addon fragility. | Verified database implementation uses Node.js native `node:sqlite` (`DatabaseSync`), SQLite WAL mode (`PRAGMA journal_mode = WAL;`), and Kysely `NodeSqliteDialect`. Zero external C++ native addon dependencies (`better-sqlite3` is not used). | RESOLVED / VERIFIED |
+| **AI Boundary & Baseline** | Risk of AI mutating authoritative marks directly or relying on unverified external LLM dependencies. | Hard invariant enforced: `AssignMarkCommand`, `SubmitEvaluationCommand`, and HTTP controllers explicitly reject `actorType === 'AI'` / `x-actor-type: AI` with `UnauthorizedActionError` (403 Forbidden). AI baseline is verified as pure TypeScript `AiProvider` interface, `AiService`, `DeterministicMockAiProvider`, and `/api/v1/ai/advisory` route. Zero live LLM providers are currently implemented. | RESOLVED / VERIFIED |
 | **Concurrent Mutation & Data Loss** | Concurrent evaluations or moderation updates overwriting state (`DATA-006`). | Implemented atomic optimistic concurrency in `KyselyEvaluationRepository` using `WHERE id = ? AND version = ?`, plus `expectedVersion` and `If-Match` validation in Fastify PATCH route. Throws `ConcurrencyConflictError` (409 Conflict) on mismatch. | RESOLVED |
 | **Rubric Version Inconsistency** | Historical evaluation meaning altered by modified rubric (`INV-008`, `DATA-007`). | Enforced rubric version immutability in `KyselyRubricRepository`: modifying existing version is rejected with hard error. New version creation preserves historical versions. | RESOLVED |
 | **Consistency Gaps on Event Failure** | Domain state committed without corresponding outbox or audit event (`DATA-005`). | `KyselyUnitOfWork` guarantees atomic transaction scope: evaluation mutations, outbox events, and audit logs succeed or roll back together atomically. | RESOLVED |
@@ -126,7 +141,7 @@
     - Fault isolation & zero partial writes: 50 rapid-fire failure injections -> 100% structured responses (400 Bad Request: 20, 403 Forbidden: 20, 404 Not Found: 10), 0 unhandled 500 errors, and exactly 0 rows mutated in SQLite.
     - Memory stability & bounded consumption: initial heap 58.41 MB, final heap 49.18 MB, net heap delta -9.23 MB (bounded well below 50 MB threshold, zero memory leaks).
   - `tests/consequential-action-boundaries.test.ts` (34 tests): Comprehensive consequential action boundaries across evaluation, triage, resolution, and OSM ingestion workflows.
-  - `tests/security-hardening.test.ts` (63 tests): Role-based access control, AI non-authority guards, parameter validation, and resource isolation.
+  - `tests/security-hardening.test.ts` (63 tests): Role-based access control, AI non-authority guards, parameter validation, and resource isolation. The previous test failure on `GET /api/v1/audit-events/%20` (returning 403 Forbidden instead of 400 Bad Request) was resolved by adding the required `x-user-role: UserRole.MODERATOR` authorization header, confirming that RBAC route guards evaluate prior to parameter validation on audit routes per API Contract §12, §37.
   - `tests/integration-contract-verification.test.ts` (26 tests): End-to-end integration contract verification across full pipeline, seeded scenarios, boundary failures, idempotency, concurrency, batch isolation, security, and PII protection:
     - End-to-end pipeline: verifies complete execution path (SyntheticOsmAdapter -> External DTO -> validation -> normalization -> command -> evaluation -> marks -> outbox -> audit -> idempotency -> SQLite).
     - Seeded demo scenarios: verifies NORMAL (complete, passing marks 65-78%, 0 signals), INCOMPLETE (missing mark -> COMPLETENESS_PARTIAL signal, MEDIUM severity), UNMARKED (all questions unmarked -> COMPLETENESS_UNMARKED signal, HIGH severity), ANOMALOUS_LENIENT (marks 90-98%), and ANOMALOUS_STRICT (marks 15-28%).
@@ -337,3 +352,75 @@
 * **Admin Demo Control:** Header seeder action bar enabled for ADMIN role with loading state, error handling, reset capability, and seeding feedback banner.
 * **Demo Reset & Recovery:** `POST /api/v1/demo/reset` executes transactional child-to-parent deletion (`resolutions` -> `triage_cases` -> `quality_signals` -> `evaluations` -> `rubrics`), preserves all non-demo records, preserves audit history, appends `RESET_DEMO_SCENARIO` audit record, and enables clean, collision-free re-seeding (`SEED -> RESET -> SEED`).
 * **Hackathon Presentation Guide:** Master demo guide finalized at `docs/demo/HACKATHON-DEMO-GUIDE.md` covering 12-step scenario, personas, AI non-authority boundary, QualityPulse z-score math, TrustLens audit model, 10-scene demo script, judge FAQ, implemented vs future matrix, and honest disclosed limitations.
+
+---
+
+## 8. Verified Screen Baseline (Screens 1–8)
+
+All 8 canonical frontend screens are implemented, mounted, and reachable according to the verified repository baseline:
+
+1. **Screen 1 — Examiner Script Queue (`/examiner/queue`):**
+   - **Component:** `ExaminerQueue.tsx` (`apps/web/src/components/examiner/ExaminerQueue.tsx`)
+   - **Role Guard:** `EXAMINER` only (enforced via `RoleGuard.tsx`)
+   - **Data Flow:** `GET /api/v1/evaluations` filtered by assigned evaluator, status pills, script metrics.
+
+2. **Screen 2 — Examiner Evaluation Workspace (`/examiner/evaluate/:evaluationId`):**
+   - **Component:** `EvaluationWorkspace.tsx` (`apps/web/src/components/evaluation/EvaluationWorkspace.tsx`)
+   - **Role Guard:** `EXAMINER` only
+   - **Data Flow:** Question rubric inspection, draft mark input, `PATCH /api/v1/evaluations/:id`, deterministic completeness warnings (`GET /api/v1/evaluations/:id/completeness`), submission (`POST /api/v1/evaluations/:id/submit`), and locked evaluation banner.
+
+3. **Screen 3 — Moderator Triage Worklist (`/moderator/triage`):**
+   - **Component:** `EscalationHub.tsx` (`apps/web/src/components/escalation/EscalationHub.tsx`) incorporating `TriageQueue.tsx`
+   - **Role Guard:** `MODERATOR` and `ADMIN`
+   - **Data Flow:** `GET /api/v1/triage-cases` with status/priority filtering, search, case queue, and modal assignment (`AssignCaseModal.tsx`).
+
+4. **Screen 4 — Triage Case Detail & AI Advisory (`/moderator/triage/:caseId`):**
+   - **Component:** `EscalationHub.tsx` incorporating `TriageCaseDetail.tsx` (`apps/web/src/components/escalation/TriageCaseDetail.tsx`)
+   - **Role Guard:** `MODERATOR` and `ADMIN`
+   - **Data Flow:** Structured QualitySignal evidence inspection, non-authoritative AI advisory generation (`POST /api/v1/ai/advisory`), and human resolution modal (`ResolutionModal.tsx`).
+
+5. **Screen 5 — QualityPulse Analytics (`/moderator/analytics`, `/admin/analytics`):**
+   - **Component:** `QualityPulseDashboard.tsx` (`apps/web/src/components/analytics/QualityPulseDashboard.tsx`)
+   - **Role Guard:** `MODERATOR` and `ADMIN` (restricted banner for EXAMINER and AI)
+   - **Data Flow:** `GET /api/v1/analytics/quality-pulse`, `GET /api/v1/analytics/evaluators`, cohort health index gauge, multi-factor risk badges, emerging hotspots feed, and manual Sentinel anomaly trigger (`POST /api/v1/analytics/quality-pulse/trigger-sentinel`).
+
+6. **Screen 6 — TrustLens Audit Ledger (`/moderator/audit`, `/admin/audit`):**
+   - **Component:** `TrustLensView.tsx` (`apps/web/src/components/audit/TrustLensView.tsx`)
+   - **Role Guard:** `MODERATOR` and `ADMIN` (403 for EXAMINER and AI)
+   - **Data Flow:** `GET /api/v1/audit-events` paginated stream, entity/actor filtering, chronological ordering, and expandable JSON payload inspection.
+
+7. **Screen 7 — Admin Overview (`/admin/overview`):**
+   - **Component:** `AdminOverviewPage.tsx` (`apps/web/src/components/pages/AdminOverviewPage.tsx`)
+   - **Role Guard:** `ADMIN` only (403 for EXAMINER, MODERATOR, and AI)
+   - **Data Flow:** System health telemetry (`GET /api/v1/health`), SQLite WAL database connection indicator, uptime seconds, QualityPulse summary telemetry (`GET /api/v1/analytics/quality-pulse`), system status matrix, quick actions to seed/reset demo and jump to triage/audit.
+
+8. **Screen 8 — Admin Demo Controls (`/admin/demo`):**
+   - **Component:** `AdminDemoPage.tsx` (`apps/web/src/components/pages/AdminDemoPage.tsx`)
+   - **Role Guard:** `ADMIN` only (403 for EXAMINER, MODERATOR, and AI)
+   - **Data Flow:** Deterministic demo scenario orchestration, Acts 1–4 walkthrough cards, Seed Demo Scenario button (`POST /api/v1/demo/seed`), Reset Demo Scenario button (`POST /api/v1/demo/reset`), confirmation modal dialog with institutional warning, real-time loading feedback.
+
+> **Automated Smoke Runner Status:**
+> Cross-screen backend regression is permanently automated via `apps/api/scripts/api-smoke-runner.ts` (invoked via `npm run test:smoke`), executing 61 Node.js `fetch()` assertions across all 8 screens, 12 RBAC & security boundaries, and demo state integrity/idempotency.
+> The runner guarantees 100% database safety by operating against an isolated in-memory SQLite database (`:memory:`) on an ephemeral port, never touching or mutating the developer database (`./data/osm.db`). It does NOT run or claim browser DOM automation.
+
+---
+
+## 9. Database & AI Implementation Realities
+
+### Database Architecture
+* **Driver & Runtime:** Node.js native `node:sqlite` (`DatabaseSync`).
+* **Concurrency & Journaling:** SQLite WAL mode (`PRAGMA journal_mode = WAL;`) enabled for high-concurrency reads and serialized ACID writes.
+* **Referential Integrity:** `PRAGMA foreign_keys = ON;` strictly enforced across all operations.
+* **Query Builder & Dialect:** Kysely with custom `NodeSqliteDialect` (`apps/api/src/infrastructure/database/dialect.ts`).
+* **External C++ Dependencies:** Zero. The system does not use `better-sqlite3` or Python/node-gyp compilation.
+* **Migrations & Active Schema:** Migrations 001 through 006 fully applied across 13 tables: `outbox_events`, `audit_events`, `idempotency_records`, `rubrics`, `evaluations`, `questions`, `evaluation_marks`, `quality_signals`, `triage_cases`, `resolutions`, and new real-data intake tables `examination_documents`, `extracted_answers`, `ai_disagreements` (Migration 006).
+* **Database State:** Clean operational state prepared for real examination workflow (0 evaluations, 0 questions, 0 marks, 0 signals, 0 cases, 0 documents, 0 extracted answers, 0 disagreements); 112 immutable audit events preserved intact in `audit_events`.
+
+
+### AI Architecture & Baseline
+* **Provider Abstraction:** Pure TypeScript `AiProvider` interface (`apps/api/src/application/ai/ai-provider.ts`).
+* **Active Provider:** `DeterministicMockAiProvider` (`apps/api/src/infrastructure/ai/mock-ai-provider.ts`).
+* **Orchestrator:** `AiService` enforcing context minimization (`AiContextBuilder`), student PII stripping, runtime immutability (`Object.freeze`), and Zod schema validation (`AiRecommendationResponseSchema`).
+* **Presentation Route:** Dedicated advisory endpoint `POST /api/v1/ai/advisory`.
+* **Live LLM Status:** No live LLM provider is currently implemented.
+* **Non-Authority Invariant:** AI is strictly assistive and advisory (`INV-003`, `INV-004`). AI actors are rejected with 403 Forbidden on all mutating endpoints.

@@ -5,9 +5,10 @@ import type {
   CompletenessValidationResultDto,
   QuestionDto,
 } from "@osm/shared";
-import { EvaluationStatus } from "@osm/shared";
+import { EvaluationStatus, UserRole } from "@osm/shared";
 import { evaluationService } from "../../services/evaluation-service.ts";
 import { type AuthContext, ApiError } from "../../services/api-client.ts";
+import { ROUTES } from "../../routes/types.ts";
 import {
   getScriptReference,
   getScriptAnswers,
@@ -142,9 +143,101 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
     return evaluation ? getScriptAnswers(evaluation.scriptId) : {};
   }, [evaluation]);
 
+  // Ownership & Read-Only derivations (Target A & E)
+  const isAssignedEvaluator = useMemo(() => {
+    if (!evaluation) return false;
+    return auth.role === UserRole.EXAMINER && auth.actorId === evaluation.evaluatorId;
+  }, [auth.role, auth.actorId, evaluation]);
+
   const isSubmitted =
     evaluation?.status === EvaluationStatus.SUBMITTED ||
     (evaluation?.status as string) === "FINALIZED";
+
+  const isReadOnly = isSubmitted || !isAssignedEvaluator;
+
+  // Dirty-state computation: comparing local draft marks against persisted evaluation aggregate (Target C & D)
+  const isQuestionDirty = useCallback(
+    (qId: string): boolean => {
+      if (!evaluation || isReadOnly) return false;
+      const local = localMarks[qId];
+      if (!local) return false;
+      const persisted = evaluation.marks.find((m) => m.questionId === qId);
+
+      const persistedAwarded =
+        persisted !== undefined && persisted.awardedMarks !== null
+          ? persisted.awardedMarks
+          : "";
+      const persistedComments = persisted?.comments || "";
+
+      const localAwarded = local.awardedMarks;
+      const localComments = local.comments || "";
+
+      return localAwarded !== persistedAwarded || localComments !== persistedComments;
+    },
+    [evaluation, isReadOnly, localMarks]
+  );
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!evaluation || isReadOnly) return false;
+    return evaluation.questions.some((q) => isQuestionDirty(q.id));
+  }, [evaluation, isReadOnly, isQuestionDirty]);
+
+  const dirtyQuestionNumbers = useMemo(() => {
+    if (!evaluation || !hasUnsavedChanges) return [];
+    return evaluation.questions
+      .filter((q) => isQuestionDirty(q.id))
+      .map((q) => (q.questionNumber.startsWith("Q") ? q.questionNumber : `Q${q.questionNumber}`));
+  }, [evaluation, hasUnsavedChanges, isQuestionDirty]);
+
+  // Browser beforeunload protection (Target C)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Dynamic back navigation route and label based on active role (Target B & C)
+  const backRoute = useMemo(() => {
+    switch (auth.role) {
+      case UserRole.EXAMINER:
+        return "/examiner/queue";
+      case UserRole.MODERATOR:
+        return ROUTES.MODERATOR_TRIAGE;
+      case UserRole.ADMIN:
+        return ROUTES.ADMIN_DEMO;
+      default:
+        return "/examiner/queue";
+    }
+  }, [auth.role]);
+
+  const backLabel = useMemo(() => {
+    switch (auth.role) {
+      case UserRole.EXAMINER:
+        return "← Back to Script Queue";
+      case UserRole.MODERATOR:
+        return "← Back to Escalation Hub";
+      case UserRole.ADMIN:
+        return "← Back to Demo Hub";
+      default:
+        return "← Back to Script Queue";
+    }
+  }, [auth.role]);
+
+  const handleBackNavigation = (e: React.MouseEvent) => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm(
+        `You have unsaved changes on ${dirtyQuestionNumbers.join(", ")}. If you leave this page now, your changes will be discarded.\n\nDo you want to discard your unsaved changes and leave?`
+      );
+      if (!confirmed) {
+        e.preventDefault();
+      }
+    }
+  };
 
   // Mark changes
   const handleMarkChange = (qId: string, value: string, maxMarks: number) => {
@@ -257,7 +350,7 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
     try {
       const submitted = await evaluationService.submitEvaluation(
         evaluation.id,
-        { evaluatorId: evaluation.evaluatorId },
+        { evaluatorId: auth.actorId },
         auth
       );
 
@@ -301,6 +394,43 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  // Keyboard navigation & save shortcuts (Phase 4 Ergonomics)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S -> save current question mark
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (!isReadOnly && activeQuestion) {
+          handleSaveMark(activeQuestion);
+        }
+        return;
+      }
+
+      // Question switching via Alt+ArrowLeft / Alt+ArrowRight or Arrow keys (when not in text input)
+      const target = e.target as HTMLElement | null;
+      const isInputFocused =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
+      if (e.key === "ArrowLeft") {
+        if (e.altKey || (!isInputFocused && !e.ctrlKey && !e.metaKey)) {
+          e.preventDefault();
+          handleNavigateQuestion("prev");
+        }
+      } else if (e.key === "ArrowRight") {
+        if (e.altKey || (!isInputFocused && !e.ctrlKey && !e.metaKey)) {
+          e.preventDefault();
+          handleNavigateQuestion("next");
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isReadOnly, activeQuestion, handleSaveMark, handleNavigateQuestion]);
 
   // Format timestamps
   const formatDateTime = (isoString?: string | null) => {
@@ -357,8 +487,8 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
   if (error || !evaluation || !scriptInfo) {
     return (
       <div className="osm-workspace-error-container" id="osm-workspace-error-view">
-        <Link to="/examiner/queue" className="osm-btn osm-btn--secondary osm-btn--sm" style={{ marginBottom: "1.5rem", textDecoration: "none" }}>
-          ← Back to Script Queue
+        <Link to={backRoute} className="osm-btn osm-btn--secondary osm-btn--sm" style={{ marginBottom: "1.5rem", textDecoration: "none" }}>
+          {backLabel}
         </Link>
         <Alert
           type="danger"
@@ -390,11 +520,12 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
       <header className="osm-workspace-header" id="osm-workspace-header">
         <div className="osm-workspace-header__left">
           <Link
-            to="/examiner/queue"
+            to={backRoute}
+            onClick={handleBackNavigation}
             className="osm-workspace-back-link"
             id="link-back-to-queue"
           >
-            ← Back to Script Queue
+            {backLabel}
           </Link>
           <div className="osm-workspace-title-row">
             <h1 className="osm-workspace-script-ref" id="workspace-script-ref">
@@ -428,6 +559,17 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
           </div>
         </div>
       </header>
+
+      {/* Read-Only Inspection Notice */}
+      {!isAssignedEvaluator && !isSubmitted && (
+        <div style={{ marginBottom: "1rem" }} id="osm-readonly-banner">
+          <Alert
+            type="info"
+            title="Read-Only Inspection Mode"
+            message={`You are viewing this examination script in supervisory/read-only mode as ${getActorDisplayName(auth.actorId)} (${auth.role}). Marking controls are restricted to the assigned examiner (${getActorDisplayName(evaluation.evaluatorId)}).`}
+          />
+        </div>
+      )}
 
       {/* Concurrency Conflict Banner */}
       {conflictNotice && (
@@ -527,9 +669,19 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
                       <article
                         key={q.id}
                         id={`script-section-${q.id}`}
+                        tabIndex={0}
+                        role="region"
+                        aria-label={`Question ${q.questionNumber} Prompt and Response`}
+                        aria-current={isActive ? "true" : undefined}
                         onClick={() => setActiveQuestionId(q.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setActiveQuestionId(q.id);
+                          }
+                        }}
                         className={`osm-script-section ${isActive ? "osm-script-section--active" : ""}`}
-                        title="Click to select this question for marking"
+                        title="Click or press Enter to select this question for marking"
                       >
                         <div className="osm-script-section__header">
                           <span className="osm-script-section__qnumber">
@@ -579,35 +731,66 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
           id="pane-examiner-marking"
           aria-label="Examiner Marking Workspace"
         >
-          {/* Question Navigator Tab Strip */}
-          <nav className="osm-qnavigator-strip" aria-label="Question Navigation">
+          {/* Question Navigator Tab Strip with Shortcut Hints */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--osm-text-muted)" }}>
+              Questions ({evaluation.questions.length})
+            </span>
+            <div className="osm-workspace-shortcuts-hint" aria-hidden="true" style={{ margin: 0 }}>
+              <span><span className="osm-kbd">Alt</span>+<span className="osm-kbd">←</span>/<span className="osm-kbd">→</span> Nav</span>
+              <span className="osm-hint-sep">•</span>
+              <span><span className="osm-kbd">Ctrl</span>+<span className="osm-kbd">S</span> Save</span>
+            </div>
+          </div>
+
+          <nav className="osm-qnavigator-strip" aria-label="Question Navigation" role="tablist">
             {evaluation.questions.map((q, idx) => {
               const isActive = q.id === activeQuestionId;
               const existingMark = evaluation.marks.find((m) => m.questionId === q.id);
               const isMarked = existingMark !== undefined;
+              const isDirty = isQuestionDirty(q.id);
 
               return (
                 <button
                   key={q.id}
                   type="button"
                   id={`btn-nav-q-${q.id}`}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`marking-card-${q.id}`}
                   onClick={() => {
                     setActiveQuestionId(q.id);
                     scrollToScriptQuestion(q.id);
                   }}
                   className={`osm-qnavigator-tab ${isActive ? "osm-qnavigator-tab--active" : ""} ${
-                    isMarked ? "osm-qnavigator-tab--marked" : "osm-qnavigator-tab--unmarked"
+                    isDirty
+                      ? "osm-qnavigator-tab--dirty"
+                      : isMarked
+                      ? "osm-qnavigator-tab--marked"
+                      : "osm-qnavigator-tab--unmarked"
                   }`}
                   aria-current={isActive ? "true" : undefined}
                 >
                   <div className="osm-qnavigator-tab__top">
                     <span className="osm-qnavigator-tab__number">Q{idx + 1}</span>
-                    <span className={`osm-qnavigator-tab__indicator ${isMarked ? "osm-qnavigator-tab__indicator--done" : "osm-qnavigator-tab__indicator--pending"}`}>
-                      {isMarked ? "✓" : "●"}
+                    <span
+                      className={`osm-qnavigator-tab__indicator ${
+                        isDirty
+                          ? "osm-qnavigator-tab__indicator--dirty"
+                          : isMarked
+                          ? "osm-qnavigator-tab__indicator--done"
+                          : "osm-qnavigator-tab__indicator--pending"
+                      }`}
+                    >
+                      {isDirty ? "●" : isMarked ? "✓" : "○"}
                     </span>
                   </div>
                   <span className="osm-qnavigator-tab__score">
-                    {isMarked ? `${existingMark.awardedMarks} / ${q.maxMarks}` : `— / ${q.maxMarks}`}
+                    {isDirty
+                      ? "Unsaved *"
+                      : isMarked
+                      ? `${existingMark.awardedMarks} / ${q.maxMarks}`
+                      : `— / ${q.maxMarks}`}
                   </span>
                 </button>
               );
@@ -648,19 +831,34 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
                   {isRubricOpen && (
                     <div className="osm-rubric-body">
                       <div className="osm-rubric-levels-list">
-                        {activeRubric.levels.map((level, lIdx) => (
-                          <div key={lIdx} className="osm-rubric-level-item">
-                            <div className="osm-rubric-level-top">
-                              <span className="osm-rubric-level-name">{level.name}</span>
-                              <span className="osm-rubric-level-range">
-                                {level.minMarks === level.maxMarks
-                                  ? `${level.minMarks} pts`
-                                  : `${level.minMarks} – ${level.maxMarks} pts`}
-                              </span>
+                        {activeRubric.levels.map((level, lIdx) => {
+                          const currentAwarded = localMarks[activeQuestion.id]?.awardedMarks;
+                          const isLevelMatched =
+                            typeof currentAwarded === "number" &&
+                            currentAwarded >= level.minMarks &&
+                            currentAwarded <= level.maxMarks;
+
+                          return (
+                            <div
+                              key={lIdx}
+                              className={`osm-rubric-level-item ${
+                                isLevelMatched ? "osm-rubric-level-item--matched" : ""
+                              }`}
+                            >
+                              <div className="osm-rubric-level-top">
+                                <span className="osm-rubric-level-name">
+                                  {isLevelMatched ? "🎯 " : ""}{level.name}
+                                </span>
+                                <span className="osm-rubric-level-range">
+                                  {level.minMarks === level.maxMarks
+                                    ? `${level.minMarks} pts`
+                                    : `${level.minMarks} – ${level.maxMarks} pts`}
+                                </span>
+                              </div>
+                              <p className="osm-rubric-level-desc">{level.descriptor}</p>
                             </div>
-                            <p className="osm-rubric-level-desc">{level.descriptor}</p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -727,6 +925,103 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
                     </div>
                   )}
                 </div>
+              ) : !isAssignedEvaluator ? (
+                /* Read-Only Inspection Mode for non-assigned actors */
+                <div className="osm-submitted-receipt" id="osm-readonly-inspection-receipt">
+                  <div
+                    className="osm-submitted-receipt__badge"
+                    style={{
+                      backgroundColor: "rgba(37, 99, 235, 0.1)",
+                      color: "var(--osm-primary)",
+                      border: "1px solid rgba(37, 99, 235, 0.25)",
+                    }}
+                  >
+                    👁️ Read-Only Inspection Mode
+                  </div>
+                  <p className="osm-submitted-receipt__sub">
+                    Assigned Examiner: <strong>{getActorDisplayName(evaluation.evaluatorId)}</strong> ({evaluation.evaluatorId}).
+                    As <strong>{getActorDisplayName(auth.actorId)}</strong> ({auth.role}), you may inspect candidate responses and rubric guidance, but you cannot record or modify marks.
+                  </p>
+
+                  <div className="osm-submitted-receipt__table-wrapper">
+                    <table className="osm-submitted-receipt__table">
+                      <thead>
+                        <tr>
+                          <th>Question</th>
+                          <th>Current Mark</th>
+                          <th>Maximum</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {evaluation.questions.map((q) => {
+                          const m = evaluation.marks.find((mark) => mark.questionId === q.id);
+                          const isMarked = m !== undefined;
+                          const pts = m?.awardedMarks ?? 0;
+                          return (
+                            <tr key={q.id}>
+                              <td>
+                                <strong>Question {q.questionNumber}</strong>
+                              </td>
+                              <td className="osm-mono">
+                                {isMarked ? <strong>{pts}</strong> : "—"}
+                              </td>
+                              <td className="osm-mono">{q.maxMarks}</td>
+                              <td>
+                                {isMarked ? (
+                                  <span style={{ color: "var(--osm-success)", fontSize: "0.8125rem", fontWeight: 600 }}>Scored</span>
+                                ) : (
+                                  <span style={{ color: "var(--osm-warning)", fontSize: "0.8125rem", fontWeight: 600 }}>Unmarked</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {evaluation.marks.some((m) => m.comments) && (
+                    <div className="osm-submitted-receipt__notes">
+                      <span className="osm-submitted-receipt__notes-label">Examiner Notes on Record:</span>
+                      {evaluation.marks.map(
+                        (m) =>
+                          m.comments && (
+                            <div key={m.questionId} className="osm-submitted-receipt__note-item">
+                              <strong>Q{evaluation.questions.find((q) => q.id === m.questionId)?.questionNumber}:</strong> {m.comments}
+                            </div>
+                          )
+                      )}
+                    </div>
+                  )}
+
+                  {/* Stepper Navigation Buttons */}
+                  <div className="osm-marking-stepper" style={{ marginTop: "1.25rem" }}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleNavigateQuestion("prev")}
+                      disabled={activeQuestionIndex <= 0}
+                      id="btn-prev-question-readonly"
+                    >
+                      ← Previous Question
+                    </Button>
+                    <span className="osm-marking-stepper-label">
+                      Question {activeQuestionIndex + 1} of {evaluation.questions.length}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleNavigateQuestion("next")}
+                      disabled={activeQuestionIndex >= evaluation.questions.length - 1}
+                      id="btn-next-question-readonly"
+                    >
+                      Next Question →
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 /* Editable Mark Entry Form */
                 <form
@@ -766,18 +1061,46 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
                       <label className="osm-marking-label">&nbsp;</label>
                       <Button
                         type="submit"
-                        variant={saveStatus[activeQuestion.id] === "saved" ? "primary" : "secondary"}
+                        variant={
+                          saveStatus[activeQuestion.id] === "saved"
+                            ? "primary"
+                            : isQuestionDirty(activeQuestion.id)
+                            ? "primary"
+                            : "secondary"
+                        }
                         loading={saveStatus[activeQuestion.id] === "saving"}
                         id={`btn-save-mark-${activeQuestion.id}`}
                         className="osm-btn-save-mark"
+                        title="Save mark to examination ledger (Ctrl+S)"
                       >
                         {saveStatus[activeQuestion.id] === "saved"
                           ? "✓ Mark Saved"
                           : saveStatus[activeQuestion.id] === "error"
                           ? "⚠️ Retry Save"
+                          : isQuestionDirty(activeQuestion.id)
+                          ? "Save Mark *"
                           : "Save Mark"}
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Live Save State & Authority Feedback */}
+                  <div className="osm-marking-state-feedback" aria-live="polite">
+                    {saveStatus[activeQuestion.id] === "saving" ? (
+                      <span className="osm-feedback-saving">⏳ Persisting mark to examination ledger...</span>
+                    ) : saveStatus[activeQuestion.id] === "saved" ? (
+                      <span className="osm-feedback-saved">✓ Mark securely recorded on official evaluation ledger (v{evaluation.version}).</span>
+                    ) : saveErrors[activeQuestion.id] ? (
+                      <span className="osm-feedback-error">⚠️ Save failed: {saveErrors[activeQuestion.id]}</span>
+                    ) : isQuestionDirty(activeQuestion.id) ? (
+                      <span className="osm-feedback-dirty">● Unsaved adjustment pending. Click "Save Mark" or press Ctrl+S to persist.</span>
+                    ) : evaluation.marks.some((m) => m.questionId === activeQuestion.id) ? (
+                      <span className="osm-feedback-persisted">
+                        ✓ Mark persisted ({evaluation.marks.find((m) => m.questionId === activeQuestion.id)?.awardedMarks} / {activeQuestion.maxMarks} pts).
+                      </span>
+                    ) : (
+                      <span className="osm-feedback-unmarked">○ Question is unmarked. Enter marks and click "Save Mark".</span>
+                    )}
                   </div>
 
                   {/* Inline Validation / Error Message */}
@@ -859,6 +1182,26 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
                 </span>
               </div>
             </div>
+          ) : !isAssignedEvaluator ? (
+            <div className="osm-completecheck-status osm-completecheck-status--ready">
+              <span className="osm-completecheck-icon">👁️</span>
+              <div>
+                <strong>Read-Only Inspection Mode</strong>
+                <span className="osm-completecheck-sub">
+                  Assigned examiner: {getActorDisplayName(evaluation.evaluatorId)}. Viewing as {getActorDisplayName(auth.actorId)} ({auth.role}).
+                </span>
+              </div>
+            </div>
+          ) : hasUnsavedChanges ? (
+            <div className="osm-completecheck-status osm-completecheck-status--incomplete">
+              <span className="osm-completecheck-icon">⚠️</span>
+              <div>
+                <strong>Unsaved Changes Pending ({dirtyQuestionNumbers.join(", ")})</strong>
+                <span className="osm-completecheck-sub">
+                  You have unsaved changes in your workspace. Save each question mark before final submission.
+                </span>
+              </div>
+            </div>
           ) : completeness?.isComplete ? (
             <div className="osm-completecheck-status osm-completecheck-status--ready">
               <span className="osm-completecheck-icon">✓</span>
@@ -885,13 +1228,20 @@ export const EvaluationWorkspace: React.FC<EvaluationWorkspaceProps> = ({ auth }
         </div>
 
         <div className="osm-completecheck-bar__right">
-          {!isSubmitted && (
+          {!isSubmitted && isAssignedEvaluator && (
             <Button
               variant="primary"
               size="md"
-              disabled={!completeness?.isComplete}
+              disabled={!completeness?.isComplete || hasUnsavedChanges}
               onClick={() => setIsSubmitModalOpen(true)}
               id="btn-validate-submit"
+              title={
+                hasUnsavedChanges
+                  ? "Please save all pending marks before submitting."
+                  : !completeness?.isComplete
+                  ? "All questions must receive a valid mark prior to submission."
+                  : "Submit and lock this evaluation."
+              }
             >
               Validate & Submit Evaluation ➔
             </Button>

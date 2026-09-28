@@ -58,19 +58,46 @@ export const SCRIPT_REFERENCES: Record<string, ScriptReferenceInfo> = {
 };
 
 /**
- * Returns clean human-readable script metadata, falling back gracefully
- * to canonical formatting for unmapped scripts.
+ * Canonical mapping from seeded evaluation identifiers to their associated script identifiers.
+ * Sourced directly from apps/api/src/application/demo/demo-scenario.service.ts.
  */
-export function getScriptReference(scriptId: string): ScriptReferenceInfo {
-  if (SCRIPT_REFERENCES[scriptId]) {
-    return SCRIPT_REFERENCES[scriptId];
+export const EVALUATION_TO_SCRIPT_ID: Record<string, string> = {
+  "eval-demo-incomplete": "SCRIPT-DEMO-101",
+  "eval-demo-complete-1": "SCRIPT-DEMO-101",
+  "eval-demo-complete-2": "SCRIPT-DEMO-101",
+  "eval-demo-complete-3": "SCRIPT-DEMO-101",
+  "eval-demo-peer-201": "SCRIPT-DEMO-201",
+  "eval-demo-peer-202": "SCRIPT-DEMO-202",
+  "eval-demo-peer-301": "SCRIPT-DEMO-301",
+  "eval-demo-peer-302": "SCRIPT-DEMO-302",
+  "eval-demo-peer-401": "SCRIPT-DEMO-401",
+  "eval-demo-peer-402": "SCRIPT-DEMO-402",
+  "eval-demo-lenient-501": "SCRIPT-DEMO-501",
+  "eval-demo-lenient-502": "SCRIPT-DEMO-502",
+  "eval-demo-lenient-503": "SCRIPT-DEMO-503",
+  "eval-demo-lenient-504": "SCRIPT-DEMO-504",
+  "eval-demo-lenient-505": "SCRIPT-DEMO-505",
+};
+
+/**
+ * Returns clean human-readable script metadata, falling back gracefully
+ * to canonical formatting for unmapped scripts. Supports both script IDs
+ * and evaluation IDs.
+ */
+export function getScriptReference(idOrScriptId: string): ScriptReferenceInfo {
+  const resolvedScriptId = EVALUATION_TO_SCRIPT_ID[idOrScriptId] || idOrScriptId;
+  if (SCRIPT_REFERENCES[resolvedScriptId]) {
+    return SCRIPT_REFERENCES[resolvedScriptId];
   }
 
   // Fallback for dynamic / seed scripts
-  const numPart = scriptId.replace(/^SCRIPT-(DEMO-)?/, "");
+  const numPart = resolvedScriptId
+    .replace(/^SCRIPT-(DEMO-)?/, "")
+    .replace(/^eval-(demo-)?(?:lenient-|peer-)?/, "");
+
   return {
-    displayRef: `OSM-2026-CS101-${numPart || scriptId}`,
-    candidateLabel: `Candidate #OSM-2026-${numPart || scriptId}`,
+    displayRef: `OSM-2026-CS101-${numPart || idOrScriptId}`,
+    candidateLabel: `Candidate #OSM-2026-${numPart || idOrScriptId}`,
     subject: "Computer Science: Systems & Algorithms",
     moduleCode: "CS-101",
   };

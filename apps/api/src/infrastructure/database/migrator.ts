@@ -9,6 +9,7 @@ import * as migration002 from "./migrations/002_authoritative_domain.js";
 import * as migration003 from "./migrations/003_quality_signals.js";
 import * as migration004 from "./migrations/004_triage_cases.js";
 import * as migration005 from "./migrations/005_resolutions.js";
+import * as migration006 from "./migrations/006_real_data_intake.js";
 import { logger } from "../logging/logger.js";
 
 export async function runMigrations(db: KyselyDb): Promise<void> {
@@ -20,6 +21,7 @@ export async function runMigrations(db: KyselyDb): Promise<void> {
     await migration003.up(db);
     await migration004.up(db);
     await migration005.up(db);
+    await migration006.up(db);
     logger.info("Database migrations completed successfully.");
   } catch (error) {
     logger.error("Failed to run database migrations", error);

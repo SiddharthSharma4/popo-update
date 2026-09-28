@@ -19,14 +19,16 @@ import {
 import type { AiService } from "../../application/ai/ai-service.js";
 import { UnauthorizedActionError } from "../../application/common/errors.js";
 import { InvalidArgumentError } from "../../domain/errors.js";
+import { AuditEvent, type AuditRepository } from "../../domain/audit/index.js";
 
 export interface AiRouteOptions {
   aiService: AiService;
+  auditRepo?: AuditRepository;
 }
 
 export const aiRoutes = (options: AiRouteOptions): FastifyPluginAsync => {
   return async (fastify) => {
-    const { aiService } = options;
+    const { aiService, auditRepo } = options;
 
     /**
      * POST /api/v1/ai/advisory
@@ -40,6 +42,8 @@ export const aiRoutes = (options: AiRouteOptions): FastifyPluginAsync => {
       const userRole = (
         (request.headers["x-user-role"] as string) || UserRole.EXAMINER
       ).toUpperCase();
+      const actorId =
+        (request.headers["x-actor-id"] as string) || "moderator_1";
 
       // AI cannot request AI advisory on its own authority (INV-003)
       if (actorType === ActorType.AI || userRole === "AI") {
@@ -73,6 +77,35 @@ export const aiRoutes = (options: AiRouteOptions): FastifyPluginAsync => {
         qualitySignalId,
         triageCaseId,
       });
+
+      // Record immutable audit event upon successful advisory generation (INV-005)
+      if (auditRepo) {
+        try {
+          const auditEvent = AuditEvent.create({
+            eventType: "AiAdvisoryGenerated",
+            actorType,
+            actorId,
+            entityType: "Evaluation",
+            entityId: evaluationId,
+            action: "GENERATE_AI_ADVISORY",
+            details: {
+              evaluationId,
+              triageCaseId: triageCaseId ?? null,
+              qualitySignalId: qualitySignalId ?? null,
+              assistanceType,
+              advisoryId: advisory.id,
+              provider: advisory.model?.provider,
+              model: advisory.model?.model,
+              confidence: advisory.confidence,
+              status: advisory.status,
+            },
+          });
+
+          await auditRepo.record(auditEvent);
+        } catch (auditError) {
+          request.log.error(auditError, "Failed to record AI advisory audit event");
+        }
+      }
 
       return reply.code(200).send(advisory);
     });

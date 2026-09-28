@@ -11,11 +11,57 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Demo actor context (DEVELOPMENT / DEMO actor simulator only; server strictly enforces authorization)
-  const [auth, setAuth] = useState<AuthContext>({
-    role: UserRole.MODERATOR,
-    actorId: "moderator_1",
-    actorType: ActorType.USER,
+  const [auth, setAuth] = useState<AuthContext>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get("role");
+      const actorParam = params.get("actor");
+      if (roleParam === "ADMIN") {
+        return { role: UserRole.ADMIN, actorId: actorParam || "admin_1", actorType: ActorType.USER };
+      }
+      if (roleParam === "EXAMINER") {
+        return { role: UserRole.EXAMINER, actorId: actorParam || "evaluator_1", actorType: ActorType.USER };
+      }
+      if (roleParam === "MODERATOR") {
+        return { role: UserRole.MODERATOR, actorId: actorParam || "moderator_1", actorType: ActorType.USER };
+      }
+
+      const savedRole = localStorage.getItem("osm_demo_role");
+      const savedActor = localStorage.getItem("osm_demo_actor");
+
+      if (savedRole && Object.values(UserRole).includes(savedRole as UserRole)) {
+        const role = savedRole as UserRole;
+        const defaultActor =
+          role === UserRole.ADMIN
+            ? "admin_1"
+            : role === UserRole.EXAMINER
+            ? "evaluator_1"
+            : "moderator_1";
+        return {
+          role,
+          actorId: savedActor || defaultActor,
+          actorType: ActorType.USER,
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      role: UserRole.MODERATOR,
+      actorId: "moderator_1",
+      actorType: ActorType.USER,
+    };
   });
+
+  const handleAuthChange = (newAuth: AuthContext) => {
+    try {
+      localStorage.setItem("osm_demo_role", newAuth.role);
+      localStorage.setItem("osm_demo_actor", newAuth.actorId);
+    } catch {
+      // ignore
+    }
+    setAuth(newAuth);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -46,11 +92,16 @@ export const App: React.FC = () => {
   return (
     <AppShell
       auth={auth}
-      onAuthChange={setAuth}
+      onAuthChange={handleAuthChange}
       health={health}
       loading={loading}
     >
-      <AppRoutes auth={auth} health={health} healthError={healthError} />
+      <AppRoutes
+        auth={auth}
+        onAuthChange={handleAuthChange}
+        health={health}
+        healthError={healthError}
+      />
     </AppShell>
   );
 };

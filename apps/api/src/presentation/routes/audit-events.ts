@@ -37,8 +37,7 @@ export const auditEventRoutes = (
     actorTypeHeader?: string,
     userRoleHeader?: string
   ): void {
-    const actorType = actorTypeHeader || ActorType.USER;
-    const userRole = userRoleHeader || UserRole.MODERATOR;
+    const actorType = (actorTypeHeader || ActorType.USER).toString().trim().toUpperCase();
 
     if (actorType === ActorType.AI) {
       throw new UnauthorizedActionError(
@@ -46,6 +45,16 @@ export const auditEventRoutes = (
         "AI is not authorized to inspect audit logs."
       );
     }
+
+    if (!userRoleHeader || userRoleHeader.trim() === "") {
+      throw new UnauthorizedActionError(
+        "INSPECT_AUDIT_LOG",
+        "Missing user role header. Role MODERATOR or ADMIN required."
+      );
+    }
+
+    const rawRole = userRoleHeader.toString().trim().toUpperCase();
+    const userRole = rawRole === "ADMINISTRATOR" ? UserRole.ADMIN : rawRole;
 
     if (userRole === UserRole.EXAMINER) {
       throw new UnauthorizedActionError(

@@ -30,10 +30,12 @@ import {
   UnauthorizedActionError,
   EntityNotFoundError,
 } from "../../application/index.js";
+import { AuditEvent, type AuditRepository } from "../../domain/audit/index.js";
 
 export interface AnalyticsRoutesOptions {
   analyticsService: QualityAnalyticsService;
   qualityPulseService?: QualityPulseService;
+  auditRepo?: AuditRepository;
 }
 
 export const analyticsRoutes = (
@@ -50,12 +52,18 @@ export const analyticsRoutes = (
       ? analyticsServiceOrOpts.qualityPulseService
       : maybePulseService;
 
+  const auditRepo =
+    "auditRepo" in analyticsServiceOrOpts
+      ? analyticsServiceOrOpts.auditRepo
+      : undefined;
+
   function verifyAnalyticsAuthorization(
     actorTypeHeader?: string,
     userRoleHeader?: string
   ): void {
     const actorType = actorTypeHeader || ActorType.USER;
-    const userRole = userRoleHeader || UserRole.MODERATOR;
+    const rawRole = (userRoleHeader || UserRole.MODERATOR).toString().trim().toUpperCase();
+    const userRole = rawRole === "ADMINISTRATOR" ? UserRole.ADMIN : rawRole;
 
     if (actorType === ActorType.AI) {
       throw new UnauthorizedActionError(
@@ -248,13 +256,19 @@ export const analyticsRoutes = (
 
     /**
      * POST /api/v1/analytics/quality-pulse/trigger-sentinel
+     * (and alias POST /api/v1/analytics/sentinel/trigger)
      * Triggers SentinelFlag statistical anomaly detection across an evaluation cycle,
      * materializing and persisting evidence-bearing QualitySignals for newly detected evaluator anomalies.
      */
-    fastify.post<{
-      Body?: Record<string, unknown>;
-      Querystring: Record<string, unknown>;
-    }>("/quality-pulse/trigger-sentinel", async (request, reply) => {
+    const triggerSentinelHandler = async (
+      request: {
+        headers: Record<string, unknown>;
+        query: Record<string, unknown>;
+        body?: Record<string, unknown>;
+        log: { error: (err: unknown, msg: string) => void };
+      },
+      reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }
+    ) => {
       verifyAnalyticsAuthorization(
         request.headers["x-actor-type"] as string | undefined,
         request.headers["x-user-role"] as string | undefined
@@ -291,7 +305,41 @@ export const analyticsRoutes = (
         criticalThresholdPercent,
       });
 
+      // Record immutable audit event upon successful Sentinel scan (INV-005)
+      if (auditRepo) {
+        try {
+          const actorType =
+            ((request.headers["x-actor-type"] as string) || ActorType.USER).toUpperCase();
+          const actorId =
+            (request.headers["x-actor-id"] as string) || "admin_1";
+          const cycleId = evaluationCycleId || "cycle-2026-demo";
+
+          const auditEvent = AuditEvent.create({
+            eventType: "SentinelScanRun",
+            actorType,
+            actorId,
+            entityType: "EvaluationCycle",
+            entityId: cycleId,
+            action: "TRIGGER_SENTINEL",
+            details: {
+              evaluationCycleId: cycleId,
+              evaluatorsAnalyzed: result.evaluatorsAnalyzed,
+              anomaliesDetected: result.anomaliesDetected,
+              newSignalsGenerated: result.newSignalsGenerated,
+              signalIds: result.signals.map((s) => s.id),
+            },
+          });
+
+          await auditRepo.record(auditEvent);
+        } catch (auditError) {
+          request.log.error(auditError, "Failed to record Sentinel scan audit event");
+        }
+      }
+
       return reply.code(200).send(result);
-    });
+    };
+
+    fastify.post("/quality-pulse/trigger-sentinel", triggerSentinelHandler as any);
+    fastify.post("/sentinel/trigger", triggerSentinelHandler as any);
   };
 };

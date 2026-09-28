@@ -18,26 +18,26 @@ export const EvaluatorDeviationTable: React.FC<EvaluatorDeviationTableProps> = (
       case EvaluatorDeviationStatus.CRITICAL_DEVIATION:
         return (
           <span className="osm-eval-status-badge osm-eval-status-badge--critical">
-            Critical (Δ ≥ 25%)
+            High Deviation Signal (Δ ≥ 25%)
           </span>
         );
       case EvaluatorDeviationStatus.MODERATE_DEVIATION:
         return (
           <span className="osm-eval-status-badge osm-eval-status-badge--moderate">
-            Moderate (15–25%)
+            Moderate Variance Signal (15–25%)
           </span>
         );
       case EvaluatorDeviationStatus.NORMAL:
         return (
           <span className="osm-eval-status-badge osm-eval-status-badge--normal">
-            Normal (Δ &lt; 15%)
+            Expected Variance (Δ &lt; 15%)
           </span>
         );
       case EvaluatorDeviationStatus.INSUFFICIENT_DATA:
       default:
         return (
           <span className="osm-eval-status-badge osm-eval-status-badge--insufficient">
-            Low Sample (N &lt; 5)
+            Limited Sample (N &lt; 5)
           </span>
         );
     }
@@ -76,7 +76,7 @@ export const EvaluatorDeviationTable: React.FC<EvaluatorDeviationTableProps> = (
                 <th>Peer Baseline</th>
                 <th>Deviation (Δ)</th>
                 <th>Std Dev (σ)</th>
-                <th>Quality Signal Status</th>
+                <th>Statistical Signal</th>
                 <th>Linked Triage</th>
               </tr>
             </thead>
@@ -142,7 +142,7 @@ export const EvaluatorDeviationTable: React.FC<EvaluatorDeviationTableProps> = (
       <div className="osm-eval-invariant-notice">
         <span>ℹ️</span>
         <p>
-          <strong>Quality Telemetry Notice:</strong> Scoring deviations represent statistical variance across evaluated candidate scripts. Deviations prompt supervisory review against rubrics and do not indicate examiner wrongdoing or grading errors.
+          <strong>Statistical Deviation Notice:</strong> Scoring deviations represent statistical variance from peer cohort averages across evaluated scripts. Deviations are non-evaluative quality signals prompting supervisory review against rubrics; they do not imply misconduct, grading error, or evaluator incompetence.
         </p>
       </div>
     </div>

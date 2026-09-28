@@ -5411,6 +5411,24 @@ main#osm-main-content,
   font-weight: var(--osm-weight-medium);
 }
 
+.osm-qnavigator-tab--dirty {
+  border-color: var(--osm-warning);
+  background-color: rgba(245, 158, 11, 0.08);
+}
+
+.osm-qnavigator-tab--dirty:hover {
+  border-color: var(--osm-warning-dark, #d97706);
+}
+
+.osm-qnavigator-tab__indicator--dirty {
+  color: var(--osm-warning);
+}
+
+.osm-qnavigator-tab--dirty .osm-qnavigator-tab__score {
+  color: var(--osm-warning);
+  font-weight: var(--osm-weight-bold);
+}
+
 /* Marking Card */
 .osm-marking-card {
   background-color: var(--osm-bg-surface);
@@ -7647,3 +7665,368 @@ main#osm-main-content,
   justify-content: center;
   margin-top: var(--osm-sp-4);
 }
+
+/* =========================================================================
+   Admin Overview & Demo Controls Surfaces (Screens 7 & 8)
+   ========================================================================= */
+
+.osm-admin-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--osm-sp-4);
+}
+
+.osm-admin-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--osm-sp-4);
+}
+
+.osm-admin-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--osm-sp-4);
+}
+
+@media (max-width: 1024px) {
+  .osm-admin-grid-3,
+  .osm-admin-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .osm-admin-grid-2,
+  .osm-admin-grid-3,
+  .osm-admin-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Subsystem Health Card */
+.osm-subsystem-card {
+  background-color: var(--osm-bg-surface);
+  border: 1px solid var(--osm-border-subtle);
+  border-radius: var(--osm-radius-md);
+  padding: var(--osm-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--osm-sp-3);
+  transition: border-color var(--osm-transition-fast), box-shadow var(--osm-transition-fast);
+}
+
+.osm-subsystem-card:hover {
+  border-color: var(--osm-border-muted);
+  box-shadow: var(--osm-shadow-sm);
+}
+
+.osm-subsystem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.osm-subsystem-name {
+  font-family: var(--osm-font-display);
+  font-size: var(--osm-t-body);
+  font-weight: var(--osm-weight-semibold);
+  color: var(--osm-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--osm-sp-2);
+}
+
+.osm-subsystem-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.osm-subsystem-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--osm-t-metadata);
+  color: var(--osm-text-secondary);
+}
+
+.osm-subsystem-row strong {
+  font-family: var(--osm-font-mono);
+  color: var(--osm-text-primary);
+}
+
+/* Governance Policy Card */
+.osm-policy-card {
+  background-color: var(--osm-bg-surface);
+  border: 1px solid var(--osm-border-subtle);
+  border-radius: var(--osm-radius-md);
+  padding: var(--osm-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--osm-sp-2);
+}
+
+.osm-policy-header {
+  display: flex;
+  align-items: center;
+  gap: var(--osm-sp-2);
+}
+
+.osm-policy-rule-id {
+  font-family: var(--osm-font-mono);
+  font-size: 11px;
+  font-weight: var(--osm-weight-bold);
+  padding: 2px 6px;
+  border-radius: var(--osm-radius-sm);
+  background-color: var(--osm-primary-subtle);
+  color: var(--osm-primary);
+}
+
+.osm-policy-title {
+  font-family: var(--osm-font-display);
+  font-size: var(--osm-t-body);
+  font-weight: var(--osm-weight-semibold);
+  color: var(--osm-text-primary);
+}
+
+.osm-policy-desc {
+  font-family: var(--osm-font-body);
+  font-size: var(--osm-t-metadata);
+  color: var(--osm-text-secondary);
+  line-height: var(--osm-leading-relaxed);
+  margin: 0;
+}
+
+/* Scenario Walkthrough Act Card */
+.osm-act-card {
+  background-color: var(--osm-bg-surface);
+  border: 1px solid var(--osm-border-subtle);
+  border-radius: var(--osm-radius-md);
+  padding: var(--osm-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--osm-sp-3);
+  position: relative;
+  transition: transform var(--osm-transition-fast), border-color var(--osm-transition-fast);
+}
+
+.osm-act-card:hover {
+  border-color: var(--osm-primary);
+  transform: translateY(-2px);
+}
+
+.osm-act-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.osm-act-num {
+  font-family: var(--osm-font-mono);
+  font-size: 11px;
+  font-weight: var(--osm-weight-bold);
+  color: var(--osm-text-muted);
+  text-transform: uppercase;
+}
+
+.osm-act-title {
+  font-family: var(--osm-font-display);
+  font-size: var(--osm-t-body);
+  font-weight: var(--osm-weight-semibold);
+  color: var(--osm-text-primary);
+  margin: 0;
+}
+
+.osm-act-desc {
+  font-family: var(--osm-font-body);
+  font-size: var(--osm-t-metadata);
+  color: var(--osm-text-secondary);
+  line-height: var(--osm-leading-relaxed);
+  margin: 0;
+  flex-grow: 1;
+}
+
+.osm-act-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--osm-sp-2);
+  border-top: 1px solid var(--osm-border-subtle);
+}
+
+/* ==========================================================================
+   Phase 4 — UI Polish & Ergonomics Enhancements
+   ========================================================================== */
+
+/* Keyboard Shortcuts Helper Pill */
+.osm-workspace-shortcuts-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--osm-font-body);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--osm-text-muted);
+  background: var(--osm-bg-surface);
+  border: 1px solid var(--osm-border-subtle);
+  border-radius: 9999px;
+  padding: 0.2rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.osm-kbd {
+  display: inline-block;
+  font-family: var(--osm-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background-color: var(--osm-bg-elevated);
+  border: 1px solid var(--osm-border-strong);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  padding: 0.05rem 0.3rem;
+  color: var(--osm-text-secondary);
+}
+
+.osm-hint-sep {
+  opacity: 0.4;
+  margin: 0 0.25rem;
+}
+
+/* Rubric Level Matched Active Indicator */
+.osm-rubric-level-item--matched {
+  background-color: rgba(37, 99, 235, 0.07) !important;
+  border-left: 3px solid var(--osm-primary) !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.1);
+}
+
+.osm-rubric-level-item--matched .osm-rubric-level-name {
+  color: var(--osm-primary) !important;
+  font-weight: var(--osm-weight-bold);
+}
+
+/* Save State Feedback Row */
+.osm-marking-state-feedback {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--osm-font-body);
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  min-height: 1.5rem;
+}
+
+.osm-feedback-saving {
+  color: var(--osm-primary);
+  font-weight: 500;
+}
+
+.osm-feedback-saved {
+  color: var(--osm-success-text);
+  font-weight: 600;
+}
+
+.osm-feedback-error {
+  color: var(--osm-danger);
+  font-weight: 600;
+}
+
+.osm-feedback-dirty {
+  color: var(--osm-warning-dark);
+  font-weight: 600;
+}
+
+.osm-feedback-persisted {
+  color: var(--osm-text-muted);
+}
+
+.osm-feedback-unmarked {
+  color: var(--osm-text-secondary);
+  font-style: italic;
+}
+
+/* Moderator Investigation Dossier */
+.osm-investigation-dossier {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background-color: var(--osm-bg-elevated);
+  border: 1px solid var(--osm-border-subtle);
+  border-radius: var(--osm-radius-md);
+}
+
+.osm-dossier-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.osm-dossier-label {
+  font-family: var(--osm-font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--osm-text-muted);
+}
+
+.osm-dossier-val {
+  font-family: var(--osm-font-heading);
+  font-size: 0.9375rem;
+  color: var(--osm-text-primary);
+}
+
+.osm-dossier-sub {
+  font-family: var(--osm-font-body);
+  font-size: 0.75rem;
+  color: var(--osm-text-secondary);
+}
+
+/* Stage Section Headers */
+.osm-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--osm-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--osm-bg-surface);
+  border: 1px solid var(--osm-border-subtle);
+  color: var(--osm-text-secondary);
+  margin-right: 0.5rem;
+}
+
+/* Accessible Focus States */
+.osm-qnavigator-tab:focus-visible,
+.osm-btn-save-mark:focus-visible,
+.osm-script-section:focus-visible,
+.osm-rubric-toggle-btn:focus-visible,
+.osm-sidebar__item:focus-visible {
+  outline: 2px solid var(--osm-border-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Candidate Response Reading Typography Enhancement */
+.osm-script-section__answer-text {
+  font-family: "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  letter-spacing: -0.01em;
+  color: #1f2937;
+  background-color: #fafbfc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 1.125rem;
+}
+
+.osm-script-section--active .osm-script-section__answer-text {
+  border-left-color: var(--osm-primary);
+  background-color: #ffffff;
+}
+

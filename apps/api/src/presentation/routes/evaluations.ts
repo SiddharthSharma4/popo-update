@@ -211,15 +211,21 @@ export const evaluationRoutes = (
           );
         }
 
+        // Enforce role authorization: only examiners can assign marks (Target E)
+        if (userRole && userRole !== UserRole.EXAMINER) {
+          throw new UnauthorizedActionError(
+            "ASSIGN_MARK",
+            `Role '${userRole}' is not authorized to assign evaluation marks. Only the assigned examiner may mark evaluations.`
+          );
+        }
+
         // Enforce resource ownership: examiners may only mark their own assigned evaluation
-        if (userRole === UserRole.EXAMINER) {
-          const current = await evaluationService.getEvaluationById(evaluationId.trim());
-          if (current.evaluatorId !== evaluatorId) {
-            throw new UnauthorizedActionError(
-              "ASSIGN_MARK",
-              `Only the assigned evaluator (${current.evaluatorId}) may assign marks to evaluation ${evaluationId}.`
-            );
-          }
+        const current = await evaluationService.getEvaluationById(evaluationId.trim());
+        if (current.evaluatorId !== evaluatorId) {
+          throw new UnauthorizedActionError(
+            "ASSIGN_MARK",
+            `Only the assigned evaluator (${current.evaluatorId}) may assign marks to evaluation ${evaluationId}.`
+          );
         }
 
         // Check optimistic concurrency if expectedVersion provided in body
@@ -329,11 +335,11 @@ export const evaluationRoutes = (
         }
         const data = parsed.data;
 
-        // Resolve evaluator identity from body or header
+        // Resolve evaluator identity from header (precedence) or body
         const evaluatorId =
-          data.evaluatorId?.trim() ||
           (request.headers["x-evaluator-id"] as string)?.trim() ||
-          (request.headers["x-actor-id"] as string)?.trim();
+          (request.headers["x-actor-id"] as string)?.trim() ||
+          data.evaluatorId?.trim();
 
         // Resolve actor type from body or header
         const actorType = (
@@ -355,6 +361,23 @@ export const evaluationRoutes = (
           throw new InvalidCommandError(
             "SubmitEvaluation",
             "Evaluator ID is required via request body or 'x-evaluator-id' header."
+          );
+        }
+
+        // Enforce role authorization: only examiners can submit evaluations (Target E)
+        if (userRole && userRole !== UserRole.EXAMINER) {
+          throw new UnauthorizedActionError(
+            "SUBMIT_EVALUATION",
+            `Role '${userRole}' is not authorized to submit evaluations. Only the assigned examiner may submit.`
+          );
+        }
+
+        // Enforce resource ownership: only the assigned evaluator may submit
+        const current = await evaluationService.getEvaluationById(evaluationId.trim());
+        if (current.evaluatorId !== evaluatorId) {
+          throw new UnauthorizedActionError(
+            "SUBMIT_EVALUATION",
+            `Only the assigned evaluator (${current.evaluatorId}) may submit evaluation ${evaluationId}.`
           );
         }
 

@@ -65,29 +65,28 @@ export const CohortHealthCard: React.FC<CohortHealthCardProps> = ({ overview }) 
         {/* 2. Quality Health Index */}
         <div className="osm-telemetry-card" id="card-pulse-health">
           <div className="osm-telemetry-card-header">
-            <span className="osm-telemetry-tag">Cohort Health</span>
-            <h3 className="osm-telemetry-title">Quality Health Index</h3>
+            <span className="osm-telemetry-tag">Review Volume</span>
+            <h3 className="osm-telemetry-title">Clean Evaluation Rate</h3>
           </div>
 
           <div className="osm-health-score-container">
             <div className="osm-health-gauge-box">
               <span className="osm-health-score-number" id="stat-health-index">
-                {health.healthIndex}
+                {health.healthIndex}%
               </span>
-              <span className="osm-health-score-denom">/ 100</span>
             </div>
 
             <div className="osm-health-risk-info">
-              <span className="osm-risk-label">Cohort Risk Level:</span>
+              <span className="osm-risk-label">Cohort Triage Risk:</span>
               <StatusBadge status={health.riskLevel} size="md" showDot={false} />
               <span className="osm-signals-hint" id="stat-evaluations-with-signals">
-                {health.evaluationsWithSignalsCount} evaluation(s) flagged with quality signals
+                {health.evaluationsWithSignalsCount} of {progress.total} evaluation(s) flagged for review
               </span>
             </div>
           </div>
 
           <p className="osm-telemetry-explanation">
-            Derived quality score reflects cohort marking consistency, flag volume, and sample distributions.
+            <strong>Formula Provenance:</strong> Represents the proportion of evaluations without active quality signals (100 - [flagged / total] × 100). Highlights operational supervisory review volume; does not represent academic grading accuracy or student performance.
           </p>
         </div>
 

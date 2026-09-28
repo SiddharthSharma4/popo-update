@@ -397,15 +397,15 @@ The following table is the authoritative high-level task registry.
 | ----------------------- | ----- | -------------- | -------- | ------- | ----------------------- | ---------------------------------------------------------- |
 | TASK-P0-FOUND-001       | P0    | FOUNDATION     | CRITICAL | DONE    | —                       | Establish repository and development foundation            |
 | TASK-P0-FOUND-002       | P0    | DOCUMENTATION  | CRITICAL | DONE    | TASK-P0-FOUND-001       | Establish project documentation and traceability structure |
-| TASK-P0-FOUND-003       | P0    | TESTING        | HIGH     | BACKLOG | TASK-P0-FOUND-001       | Establish baseline testing and verification infrastructure |
-| TASK-P0-FOUND-004       | P0    | INFRASTRUCTURE | HIGH     | BACKLOG | TASK-P0-FOUND-001       | Establish local development and environment configuration  |
-| TASK-P0-FOUND-005       | P0    | DEMO           | HIGH     | BACKLOG | TASK-P0-FOUND-002       | Establish deterministic demo/reset foundation              |
+| TASK-P0-FOUND-003       | P0    | TESTING        | HIGH     | DONE    | TASK-P0-FOUND-001       | Establish baseline testing and verification infrastructure |
+| TASK-P0-FOUND-004       | P0    | INFRASTRUCTURE | HIGH     | DONE    | TASK-P0-FOUND-001       | Establish local development and environment configuration  |
+| TASK-P0-FOUND-005       | P0    | DEMO           | HIGH     | DONE    | TASK-P0-FOUND-002       | Establish deterministic demo/reset foundation              |
 | TASK-P1-DOMAIN-001      | P1    | DOMAIN         | CRITICAL | DONE    | P0 complete             | Establish core domain model                                |
 | TASK-P1-DOMAIN-002      | P1    | DATABASE       | CRITICAL | DONE    | TASK-P1-DOMAIN-001      | Establish authoritative persistence model                  |
 | TASK-P1-DOMAIN-003      | P1    | API            | HIGH     | DONE    | TASK-P1-DOMAIN-001      | Establish application/service boundaries                   |
 | TASK-P2-EVAL-001        | P2    | EVALUATION     | CRITICAL | DONE    | P1 complete             | Implement evaluation workflow                              |
 | TASK-P2-EVAL-002        | P2    | API            | HIGH     | DONE    | TASK-P2-EVAL-001        | Expose evaluation operations                               |
-| TASK-P2-EVAL-003        | P2    | TESTING        | HIGH     | BACKLOG | TASK-P2-EVAL-001        | Verify evaluation lifecycle                                |
+| TASK-P2-EVAL-003        | P2    | TESTING        | HIGH     | DONE    | TASK-P2-EVAL-001        | Verify evaluation lifecycle                                |
 | TASK-P3-VAL-001         | P3    | VALIDATION     | CRITICAL | DONE    | P2 complete             | Implement deterministic completeness validation            |
 | TASK-P3-VAL-002         | P3    | VALIDATION     | CRITICAL | DONE    | TASK-P3-VAL-001         | Generate first QualitySignal                               |
 | TASK-P3-VAL-003         | P3    | TESTING        | HIGH     | DONE    | TASK-P3-VAL-002         | Verify deterministic signal generation                     |
@@ -422,8 +422,8 @@ The following table is the authoritative high-level task registry.
 | TASK-P7-AI-001          | P7    | AI             | CRITICAL | DONE    | P3-P6 complete          | Establish AI provider abstraction                          |
 | TASK-P7-AI-002          | P7    | AI             | HIGH     | DONE    | TASK-P7-AI-001          | Implement AI context builder                               |
 | TASK-P7-AI-003          | P7    | AI             | HIGH     | DONE    | TASK-P7-AI-002          | Verify AI boundary & advisory behavior                     |
-| TASK-P7-AI-004          | P7    | AI             | HIGH     | BACKLOG | TASK-P7-AI-003          | Implement deterministic fallback behavior                  |
-| TASK-P7-AI-005          | P7    | TESTING        | CRITICAL | BACKLOG | TASK-P7-AI-004          | Verify AI authority boundaries                             |
+| TASK-P7-AI-004          | P7    | AI             | HIGH     | DONE    | TASK-P7-AI-003          | Implement deterministic fallback behavior                  |
+| TASK-P7-AI-005          | P7    | TESTING        | CRITICAL | DONE    | TASK-P7-AI-004          | Verify AI authority boundaries                             |
 | TASK-P8-ANALYTICS-001   | P8    | ANALYTICS      | HIGH     | DONE    | P6 complete             | Implement quality analytics                                |
 | TASK-P8-ANALYTICS-002   | P8    | ANALYTICS      | HIGH     | DONE    | TASK-P8-ANALYTICS-001   | Implement QualityPulse                                     |
 | TASK-P8-ANALYTICS-003   | P8    | UI             | HIGH     | DONE    | TASK-P8-ANALYTICS-002   | Implement analytics presentation                           |
@@ -438,6 +438,18 @@ The following table is the authoritative high-level task registry.
 | TASK-P11-DEMO-002       | P11   | DEMO           | CRITICAL | DONE    | TASK-P11-DEMO-001       | Implement demo reset and recovery                          |
 | TASK-P11-DEMO-003       | P11   | DEMO           | CRITICAL | DONE    | TASK-P11-DEMO-002       | Execute full demo verification                             |
 | TASK-P11-DEMO-004       | P11   | DOCUMENTATION  | HIGH     | DONE    | TASK-P11-DEMO-003       | Finalize hackathon-facing documentation                    |
+| FE-020                  | P12   | UI             | HIGH     | DONE    | P11 complete            | Implement Screen 7: Admin Overview Page (/admin/overview)   |
+| FE-023                  | P12   | UI             | HIGH     | DONE    | FE-020                  | Implement Screen 8: Admin Demo Controls Page (/admin/demo)  |
+| TASK-MVP-DOCS-001       | P12   | DOCUMENTATION  | CRITICAL | DONE    | FE-023                  | Synchronize documentation with verified repository state    |
+| TASK-MVP-STABILIZE-001  | P12   | STABILIZATION  | NORMAL   | DONE    | TASK-MVP-DOCS-001       | API Integration Smoke & Regression Runner                   |
+| TASK-REAL-01            | REAL  | DATABASE       | CRITICAL | DONE    | P12 complete            | Real-data schema foundation & additive migration           |
+| TASK-REAL-02            | REAL  | INFRASTRUCTURE | HIGH     | READY   | TASK-REAL-01            | File upload & storage pipeline                             |
+| TASK-REAL-03            | REAL  | API            | HIGH     | BACKLOG | TASK-REAL-02            | Document ingestion API & lifecycle                         |
+| TASK-REAL-04            | REAL  | AI             | HIGH     | BACKLOG | TASK-REAL-03            | OCR extraction & confidence pipeline                       |
+| TASK-REAL-05            | REAL  | UI             | HIGH     | BACKLOG | TASK-REAL-04            | Human extraction verification & override                   |
+| TASK-REAL-06            | REAL  | DOMAIN         | CRITICAL | BACKLOG | TASK-REAL-05            | Script segmentation & persistent answer mapping            |
+| TASK-REAL-07            | REAL  | AI             | HIGH     | BACKLOG | TASK-REAL-06            | Real AI analysis & provenance pipeline                     |
+| TASK-REAL-08            | REAL  | UI             | HIGH     | BACKLOG | TASK-REAL-07            | Real-data evaluation workspace & disagreement capture      |
 
 > The task IDs above establish the initial execution structure. Detailed implementation tasks may be decomposed from these tasks as required.
 
@@ -1166,22 +1178,28 @@ This section records the current execution pointer.
 
 ```text
 Current Phase:
-P11 — Demo (Complete)
+Phase REAL — Real Examination Intake & Evaluation Workflow
 
 Current Task:
-TASK-P11-DEMO-004 (Finalize hackathon-facing documentation)
+TASK-REAL-01 (Real-Data Schema Foundation & Additive Migration)
 
 Current Task Status:
-DONE (Verified: 592/592 passed tests across 31 suites, typecheck: 0 errors across monorepo workspaces, web build: PASS in 737ms, git diff --check: PASS. Created master Hackathon Demo Guide docs/demo/HACKATHON-DEMO-GUIDE.md covering 12-step scenario, canonical personas, AI non-authority boundary specs, QualityPulse z-score anomaly detection, TrustLens immutable audit trail, reset/recovery lifecycle, 10-scene presentation script, judge FAQ, implemented vs future scope, and honest limitations. Updated root README.md and documentation architecture.)
+DONE (Verified: Migration 006 implemented and applied via Kysely and Node.js node:sqlite. Added examination_documents, extracted_answers, and ai_disagreements tables with 11 performance indexes, CASCADE/SET NULL foreign keys, and TypeScript Kysely definitions. Shared enum contracts compiled into @osm/shared. Backwards compatibility verified: 34/34 test suites, 622/622 tests passing in Vitest, 61/61 assertions in test:smoke passing, zero type errors across all 3 workspaces. Safe reset of demo cohort executed leaving audit ledger intact at 112 records.)
 
 Next Ready Task:
-NONE — All MVP roadmap phases (P0 through P11) are COMPLETE. Repository is under HACKATHON FREEZE.
+TASK-REAL-02 (File Upload & Storage Pipeline) — Awaiting explicit user authorization before proceeding.
 
 Vertical Slice:
 COMPLETE (Full vertical slice verified: CreateEvaluation -> Validation -> QualitySignal -> TriageCase -> Human Review/EscalationHub -> Resolution -> Immutable AuditEvent -> Live HTTP Inspection API)
 
 AI Layer:
-COMPLETE / VERIFIED (Boundary, context builder, mock provider, schema validation, fallback degradation, and advisory behavior 100% verified with non-authority invariants strictly enforced)
+COMPLETE / VERIFIED (AiProvider boundary, context builder, DeterministicMockAiProvider, schema validation, fallback degradation, and advisory route POST /api/v1/ai/advisory verified; no live LLM provider currently implemented; non-authority invariants strictly enforced)
+
+Database Layer:
+COMPLETE / VERIFIED (Native Node.js node:sqlite, DatabaseSync, SQLite WAL mode [PRAGMA journal_mode = WAL;], Kysely NodeSqliteDialect, zero external C++ dependencies, atomic UnitOfWork transactions, Migration 006 applied)
+
+Screens 1–8 Baseline:
+COMPLETE / VERIFIED (All 8 screens implemented and reachable: Screen 1: /examiner/queue [ExaminerQueue.tsx], Screen 2: /examiner/evaluate/:evaluationId [EvaluationWorkspace.tsx], Screen 3: /moderator/triage [EscalationHub.tsx / TriageQueue.tsx], Screen 4: /moderator/triage/:caseId [EscalationHub.tsx / TriageCaseDetail.tsx], Screen 5: /moderator/analytics [QualityPulseDashboard.tsx], Screen 6: /moderator/audit [TrustLensView.tsx], Screen 7: /admin/overview [AdminOverviewPage.tsx], Screen 8: /admin/demo [AdminDemoPage.tsx])
 
 Integration:
 COMPLETE / VERIFIED (OSM boundary, synthetic adapter, replay idempotency, outbox event polling and dispatch lifecycle)
@@ -1191,6 +1209,9 @@ COMPLETE / VERIFIED (Security hardening, server-side RBAC, consequential action 
 
 Demo:
 COMPLETE / VERIFIED (Deterministic seeding, Evaluator Golden Path, QualityPulse anomaly detection, AI advisory non-authority, human moderation, TrustLens audit viewer, child-to-parent reset, non-demo isolation, transaction rollback, and hackathon documentation)
+
+Test Baseline:
+34 test suites, 622 tests, 622 passed, 0 failed; API Smoke: 61/61 passed; Workspace typecheck: 0 errors.
 ```
 
 This section must be updated as execution progresses.

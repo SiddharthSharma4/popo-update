@@ -97,12 +97,12 @@ export const TrustLensView: React.FC<TrustLensViewProps> = ({ auth }) => {
               TrustLens Audit Ledger
             </h1>
             <span className="osm-trustlens-integrity-pill">
-              🛡️ Tamper-Evident Ledger Verified
+              📋 Audit Trail Active
             </span>
           </div>
           <p className="osm-trustlens-subtitle">
-            Cryptographically chained chronological audit stream documenting every evaluation mark,
-            moderation decision, and system event with actor accountability.
+            Chronological transactional audit ledger documenting every evaluation mark,
+            moderation decision, and supervisory action with actor attribution.
           </p>
         </div>
 
@@ -208,6 +208,11 @@ export const TrustLensView: React.FC<TrustLensViewProps> = ({ auth }) => {
           </Button>
         </div>
       )}
+
+      {/* Institutional Demo Fixture Footnote */}
+      <p style={{ marginTop: "2rem", fontSize: "11px", color: "var(--osm-text-muted)", textAlign: "center" }}>
+        * Demonstration Notice: Personal examiner and moderator identities shown are presentation fixtures mapped from system actor IDs (e.g. evaluator_1) per the demonstration protocol.
+      </p>
     </div>
   );
 };

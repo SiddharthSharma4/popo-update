@@ -137,6 +137,53 @@ export interface ResolutionsTable {
   created_at: string; // ISO 8601 UTC
 }
 
+export interface ExaminationDocumentsTable {
+  id: string;
+  evaluation_cycle_id: string;
+  document_type: string; // "QUESTION_PAPER" | "MARKING_SCHEME" | "ANSWER_SHEET" | "REFERENCE_ANSWER"
+  original_filename: string;
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number;
+  sha256_hash: string;
+  ocr_status: string; // "PENDING" | "EXTRACTED" | "HUMAN_VERIFIED" | "FAILED" | "MANUAL_FALLBACK"
+  ocr_confidence: number | null;
+  raw_text: string | null;
+  human_verified_text: string | null;
+  metadata: string | null; // JSON stringified metadata
+  created_at: string; // ISO 8601 UTC
+  updated_at: string; // ISO 8601 UTC
+}
+
+export interface ExtractedAnswersTable {
+  id: string;
+  evaluation_id: string;
+  question_id: string;
+  document_id: string | null;
+  extracted_text: string;
+  human_verified_text: string | null;
+  page_number: number | null;
+  confidence: number | null;
+  verification_status: string; // "UNVERIFIED" | "HUMAN_CONFIRMED" | "MANUALLY_EDITED"
+  uncertainty_flags: string | null; // JSON stringified string[]
+  created_at: string; // ISO 8601 UTC
+  updated_at: string; // ISO 8601 UTC
+}
+
+export interface AiDisagreementsTable {
+  id: string;
+  evaluation_id: string;
+  question_id: string;
+  category: string; // AiDisagreementCategory enum
+  ai_suggested_score: number;
+  human_awarded_score: number;
+  score_delta: number;
+  examiner_reason: string;
+  evaluator_id: string;
+  ai_analysis_id: string | null;
+  created_at: string; // ISO 8601 UTC
+}
+
 export interface Database {
   outbox_events: OutboxEventsTable;
   audit_events: AuditEventsTable;
@@ -148,5 +195,8 @@ export interface Database {
   quality_signals: QualitySignalsTable;
   triage_cases: TriageCasesTable;
   resolutions: ResolutionsTable;
+  examination_documents: ExaminationDocumentsTable;
+  extracted_answers: ExtractedAnswersTable;
+  ai_disagreements: AiDisagreementsTable;
 }
 

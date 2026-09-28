@@ -52,11 +52,14 @@ export class AssignMarkHandler {
         throw new EntityNotFoundError("Evaluation", command.evaluationId);
       }
 
-      // Check assignment authorization: examiners may only assign marks to their own assigned evaluations
-      if (
-        command.userRole === "EXAMINER" &&
-        evaluation.evaluatorId !== command.evaluatorId
-      ) {
+      // Check assignment authorization: only the assigned examiner may assign marks
+      if (command.userRole && command.userRole !== "EXAMINER") {
+        throw new UnauthorizedActionError(
+          "ASSIGN_MARK",
+          `Role '${command.userRole}' is not authorized to assign evaluation marks. Only the assigned examiner may mark evaluations.`
+        );
+      }
+      if (evaluation.evaluatorId !== command.evaluatorId) {
         throw new UnauthorizedActionError(
           "ASSIGN_MARK",
           `Only the assigned evaluator (${evaluation.evaluatorId}) may assign marks to evaluation ${evaluation.id}.`

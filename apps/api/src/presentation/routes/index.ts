@@ -144,9 +144,12 @@ export const apiV1Routes = (optsOrDb: ApiV1Options | KyselyDb): FastifyPluginAsy
     });
 
     // Quality analytics & QualityPulse routes mounted at /api/v1/analytics
-    await fastify.register(analyticsRoutes({ analyticsService, qualityPulseService }), {
-      prefix: "/analytics",
-    });
+    await fastify.register(
+      analyticsRoutes({ analyticsService, qualityPulseService, auditRepo }),
+      {
+        prefix: "/analytics",
+      }
+    );
 
     // OSM Integration routes mounted at /api/v1/integration/osm
     await fastify.register(integrationRoutes({ ingestHandler, batchHandler }), {
@@ -154,7 +157,7 @@ export const apiV1Routes = (optsOrDb: ApiV1Options | KyselyDb): FastifyPluginAsy
     });
 
     // AI Advisory routes mounted at /api/v1/ai
-    await fastify.register(aiRoutes({ aiService }), {
+    await fastify.register(aiRoutes({ aiService, auditRepo }), {
       prefix: "/ai",
     });
 

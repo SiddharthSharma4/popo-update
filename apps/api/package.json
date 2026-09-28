@@ -9,6 +9,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "test": "vitest run",
+    "test:smoke": "tsx scripts/api-smoke-runner.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
